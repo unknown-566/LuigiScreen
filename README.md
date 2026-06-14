@@ -1,7 +1,7 @@
 # LuigiScreen
 
-LuigiScreen Free is a Paper plugin that displays a live RTMP video stream on a
-configurable wall of Minecraft maps.
+LuigiScreen Free is a server-side Paper/Bukkit plugin that displays a live
+RTMP video stream on a configurable wall of Minecraft maps.
 
 OBS Studio or another publisher sends video to MediaMTX. LuigiScreen decodes
 the latest frame with FFmpeg and renders it through MapEngine. Players do not
@@ -32,6 +32,9 @@ need a client mod.
 - MediaMTX
 - OBS Studio or another RTMP publisher
 - Windows x86_64 or Linux x86_64 server
+
+LuigiScreen uses the Bukkit plugin ecosystem but currently targets Paper APIs.
+Install it on Paper, not on a plain Spigot or CraftBukkit server.
 
 MapEngine is a required runtime dependency:
 https://modrinth.com/plugin/mapengine

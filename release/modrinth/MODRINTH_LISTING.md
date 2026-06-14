@@ -12,7 +12,7 @@ This file is the source of truth for the LuigiScreen Modrinth page.
 
 **Summary:**
 
-> Display live RTMP video streams from OBS on configurable Minecraft map screens, powered by MediaMTX and MapEngine.
+> A server-side Paper/Bukkit plugin for live OBS and RTMP video on configurable Minecraft map screens.
 
 **Recommended categories:**
 
@@ -63,7 +63,7 @@ https://modrinth.com/plugin/mapengine
 ````markdown
 # Turn a Minecraft wall into a live screen
 
-LuigiScreen is a Paper plugin that displays a live RTMP video stream across a configurable wall of Minecraft maps.
+LuigiScreen is a server-side Paper/Bukkit plugin that displays a live RTMP video stream across a configurable wall of Minecraft maps.
 
 Use OBS Studio to capture a desktop, game, video, browser or camera. MediaMTX receives the RTMP stream, LuigiScreen decodes its latest frame with FFmpeg, and MapEngine renders it for nearby players.
 
@@ -93,6 +93,9 @@ No client mod is required. Players join with a normal Minecraft client.
 - MediaMTX
 - OBS Studio or another RTMP publisher
 - Windows x86_64 or Linux x86_64 server
+
+LuigiScreen belongs to the Bukkit plugin ecosystem but currently targets
+Paper APIs. Use Paper 1.21.11, not a plain Spigot or CraftBukkit server.
 
 [MapEngine is a required dependency.](https://modrinth.com/plugin/mapengine)
 
@@ -210,12 +213,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.1.0-alpha.7.jar
 ```
 
-**File size:** 55,223,842 bytes
+**File size:** 55,223,854 bytes
 
 **SHA-256:**
 
 ```text
-3D15A99059245646077AE65E13FB8D7AAA469BA1AE120B1C0BCA96E6384D6839
+6E5FAD8E6572FDFFA68B077B65E7163A6F8CE06EBFADAD6E9728DDA78A9FBD1A
 ```
 
 **Dependency:**

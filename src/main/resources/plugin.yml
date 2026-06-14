@@ -4,7 +4,7 @@ main: cz.luigismp.screen.LuigiScreenPlugin
 api-version: '1.21.11'
 depend: [MapEngine]
 authors: [LuigiSMP]
-description: Displays a local RTMP stream on a MapEngine screen.
+description: A server-side Paper/Bukkit plugin for live RTMP map screens.
 
 commands:
   luigiscreen:

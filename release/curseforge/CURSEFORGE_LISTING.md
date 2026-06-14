@@ -17,7 +17,7 @@ project name.
 
 **Summary:**
 
-> Display live OBS and RTMP video streams on configurable Minecraft map screens without requiring a client mod.
+> A server-side Paper/Bukkit plugin for live OBS and RTMP video on configurable Minecraft map screens.
 
 **Primary category:** Admin Tools
 
@@ -78,8 +78,8 @@ Paste the content inside this block into the CurseForge description editor.
 ````markdown
 # Turn a Minecraft wall into a live video screen
 
-LuigiScreen is a server-side Paper plugin that renders a live RTMP video
-stream across a configurable wall of Minecraft maps.
+LuigiScreen is a server-side Paper/Bukkit plugin that renders a live RTMP
+video stream across a configurable wall of Minecraft maps.
 
 OBS Studio or another RTMP publisher captures a desktop, game, browser, camera
 or video. MediaMTX receives the stream, LuigiScreen decodes the latest video
@@ -113,6 +113,9 @@ Players do not need to install a client mod.
 - MediaMTX
 - OBS Studio or another RTMP publisher
 - Windows x86_64 or Linux x86_64 server
+
+LuigiScreen belongs to the Bukkit plugin ecosystem but currently targets
+Paper APIs. Use Paper 1.21.11, not a plain Spigot or CraftBukkit server.
 
 **MapEngine 1.8.12 is a required server plugin. LuigiScreen will not start
 without it.**
@@ -272,12 +275,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,223,842 bytes
+**File size:** 55,223,854 bytes
 
 **SHA-256:**
 
 ```text
-3D15A99059245646077AE65E13FB8D7AAA469BA1AE120B1C0BCA96E6384D6839
+6E5FAD8E6572FDFFA68B077B65E7163A6F8CE06EBFADAD6E9728DDA78A9FBD1A
 ```
 
 ## File dependency

@@ -9,7 +9,7 @@
     <version>1.1.0-alpha.7</version>
     <packaging>jar</packaging>
     <name>LuigiScreen</name>
-    <description>Displays live RTMP video streams on Minecraft map screens.</description>
+    <description>A server-side Paper/Bukkit plugin for live RTMP video screens.</description>
     <url>https://github.com/unknown-566/LuigiScreen</url>
 
     <licenses>
