@@ -1,0 +1,182 @@
+prefix: "<dark_gray>[<green>LuigiScreen</green>]</dark_gray> "
+
+common:
+  none: "žádná"
+  never: "nikdy"
+  unknown: "neznámé"
+  not-available: "N/A"
+
+commands:
+  no-display: "<red>Nejdříve vytvoř plátno: /screen create 7 4</red>"
+  stream-connecting: "<green>Připojuji se k RTMP streamu...</green>"
+  stream-already-running: "<red>Stream už běží.</red>"
+  stream-stopped: "<green>Stream byl zastaven.</green>"
+  decoder-stopping: "<red>Dekodér se stále ukončuje. Zkus to znovu za několik sekund.</red>"
+  display-removed: "<green>Plátno bylo odstraněno.</green>"
+  display-remove-failed: "<red>Dekodér se stále ukončuje. Plátno zůstalo zachované.</red>"
+  reload-success: "<green>Konfigurace, jazyk a plátno byly znovu načteny.</green>"
+  reload-failed: "<red>Opětovné načtení se nezdařilo. Podívej se do konzole.</red>"
+  debug-player-only: "<red>Debug bossbar může použít pouze hráč.</red>"
+  debug-enabled: "<green>Debug bossbar a sidebar byly zapnuty. Příkazem /screen debug je znovu vypneš.</green>"
+  debug-disabled: "<green>Debug bossbar a sidebar byly vypnuty.</green>"
+  mediamtx-player-only: "<red>Průvodce MediaMTX může použít pouze hráč.</red>"
+  create-player-only: "<red>Tento příkaz musí použít hráč.</red>"
+  create-size: "<red>Velikost musí být mezi 1x1 a <max_width>x<max_height> mapami.</red>"
+  create-map-limit: "<red>Jedno plátno může obsahovat nejvýše <max_maps> map.</red>"
+  create-look-at-wall: "<red>Dívej se na levý horní blok svislé stěny.</red>"
+  create-success: "<green>Vytvořeno plátno <width>x<height>. Připojuji se ke streamu...</green>"
+  create-failed: "<red>Předchozí dekodér se stále ukončuje. Zkus to znovu za několik sekund.</red>"
+  help-create: "<white>/screen create [šířka] [výška]</white><gray> - vytvoří plátno na stěně</gray>"
+  help-control: "<white>/screen start|stop|status|remove|reload</white>"
+  help-debug: "<white>/screen debug</white><gray> - zapne nebo vypne živý výkonový bossbar a sidebar</gray>"
+  help-mediamtx: "<white>/screen mediamtx <argument></white><gray> - spustí průvodce nastavením MediaMTX</gray>"
+  mediamtx-argument: "situace"
+
+status:
+  no-display: "<gray>Žádné plátno nebylo vytvořeno.</gray>"
+  line: "<gray>Plátno <width>x<height>, stream: <stream>, chyba streamu: <stream_error>, efektivní FPS: <fps>, diváci: <viewers>, přijaté/vykreslené: <received>/<rendered>, chyba vykreslení: <render_error>, svět: <world>, směr: <facing>, URL: <url></gray>"
+
+screen:
+  title: "LuigiSMP"
+  connecting: "Připojování..."
+  stopped: "Stream zastaven"
+  waiting: "Čekám na stream"
+  offline: "Stream je offline"
+
+states:
+  stopped: "zastaven"
+  stopping: "ukončování"
+  connecting: "připojování"
+  live: "živě"
+  paused_no_viewers: "pozastaveno (bez diváků)"
+  waiting_for_stream: "čekání na stream"
+
+directions:
+  north: "sever"
+  south: "jih"
+  east: "východ"
+  west: "západ"
+
+situations:
+  same-pc: "stejný počítač"
+  lan: "místní síť"
+  internet: "internet"
+  vpn: "VPN"
+  hosting: "externí hosting"
+
+errors:
+  none: "žádná"
+  stream_offline: "stream je offline"
+  stream_ended: "stream skončil"
+
+debug:
+  starting: "Spouštím debug LuigiScreen..."
+  sidebar-title: "<green><bold>LuigiScreen Debug</bold></green>"
+  sidebar-stream: "<gray>Stream:</gray> <white><state></white>"
+  sidebar-source: "<gray>Zdroj:</gray> <white><resolution></white> <dark_gray>(<age>)</dark_gray>"
+  sidebar-screen: "<gray>Plátno:</gray> <white><width>x<height> / <maps> map</white>"
+  sidebar-output: "<gray>Výstup:</gray> <white><width>x<height> px</white>"
+  sidebar-viewers: "<gray>Diváci:</gray> <white><viewers></white>"
+  sidebar-fps: "<gray>FPS vstup/výstup:</gray> <white><input>/<output></white>"
+  sidebar-frames: "<gray>Snímky vstup/výstup:</gray> <white><received>/<rendered></white>"
+  sidebar-queue: "<gray>Fronta/nahrazeno:</gray> <white><queue> / <replaced></white>"
+  sidebar-render: "<gray>Render posl./prům.:</gray> <white><last>/<average> ms</white>"
+  sidebar-heap: "<gray>Heap:</gray> <white><used>/<max></white>"
+  sidebar-buffers: "<gray>Buffery obrázků:</gray> <white>~<buffers></white>"
+  sidebar-cpu: "<gray>CPU proces/systém:</gray> <white><process>/<system></white>"
+  sidebar-server: "<gray>TPS/MSPT:</gray> <white><tps>/<mspt></white>"
+  sidebar-runtime: "<gray>Doba běhu/vlákna:</gray> <white><uptime> / <threads></white>"
+  sidebar-health: "<gray>Reconnecty/chyby:</gray> <white><reconnects> / <errors></white>"
+  stream: "[STREAM] <state> | Zdroj <resolution> | Poslední snímek <age>"
+  output: "[VÝSTUP] <width>x<height> map (<maps>) | <pixels_width>x<pixels_height> px | Diváci <viewers> | <fps> FPS"
+  frames: "[SNÍMKY] Přijato <received> (<received_fps>/s) | Vykresleno <rendered> (<rendered_fps>/s) | Nahrazeno <replaced> (<replaced_fps>/s) | Fronta <queue>"
+  render: "[VYKRESLENÍ] Poslední <last> ms | Průměr <average> ms | Limit <budget> ms"
+  memory: "[PAMĚŤ] JVM heap <heap_used>/<heap_max> | Non-heap <non_heap> | Systém <system_used>/<system_total>"
+  buffers: "[BUFFERY] Obrázky LuigiScreen ~<buffers> | Nativní paměť FFmpeg a MapEngine se neměří"
+  cpu: "[CPU] Proces <process> | Systém <system> | Vlákna <threads>"
+  server: "[SERVER] TPS <tps> | MSPT <mspt> | Doba běhu <uptime> | GC <collections>/<gc_time> ms"
+  health: "[STAV] Pokusy o připojení <reconnects> | Chyba streamu <stream_error> | Chyba vykreslení <render_error>"
+
+mediamtx:
+  generated: "<green>Nastavení MediaMTX pro situaci <situation> bylo vytvořeno.</green>"
+  folder: "<gray>Složka: <folder></gray>"
+  obs-server: "<aqua>Server pro OBS: <url></aqua>"
+  obs-options: "<gray>Klíč streamu: nechat prázdný | Použít ověření: vypnuto</gray>"
+  decoder-switching: "<yellow>RTMP dekodér se bezpečně přepíná na pozadí.</yellow>"
+  private-warning: "<yellow>Soubor setup.txt uchovávej v soukromí. Obsahuje vygenerované přihlašovací údaje.</yellow>"
+  failed: "<red>Nastavení MediaMTX se nezdařilo. Podívej se do konzole serveru.</red>"
+  private-answer: "<dark_gray>Tvoje další zpráva v chatu je soukromá pro průvodce. Slovem cancel ho ukončíš.</dark_gray>"
+  choose: "<yellow>Vyber situaci MediaMTX:</yellow>"
+  option-same-pc: "<white>/screen mediamtx same-pc - vše běží na jednom počítači</white>"
+  option-lan: "<white>/screen mediamtx lan - OBS je na jiném počítači ve stejné síti</white>"
+  option-internet: "<white>/screen mediamtx internet - OBS se připojuje přes veřejnou IP a port forwarding</white>"
+  option-vpn: "<white>/screen mediamtx vpn - CGNAT, Tailscale nebo ZeroTier</white>"
+  option-hosting: "<white>/screen mediamtx hosting - MediaMTX běží na jiném serveru</white>"
+  invalid-host: "<red>Zadej platnou IPv4 adresu nebo hostname. Slovem cancel průvodce ukončíš.</red>"
+  invalid-public-host: "<red>Zadej veřejnou IPv4 adresu nebo DNS hostname. Slovem cancel průvodce ukončíš.</red>"
+  invalid-vpn-host: "<red>Zadej platnou VPN IP adresu nebo hostname. Slovem cancel průvodce ukončíš.</red>"
+  invalid-hosting-host: "<red>Zadej IPv4 adresu nebo DNS hostname serveru MediaMTX. Slovem cancel průvodce ukončíš.</red>"
+  invalid-port: "<red>Zadej TCP port od 1 do 65535 nebo napiš default. Slovem cancel průvodce ukončíš.</red>"
+  cancelled: "<yellow>Průvodce MediaMTX byl zrušen.</yellow>"
+  timeout: "<yellow>Čas průvodce MediaMTX vypršel. Spusť příkaz znovu.</yellow>"
+  prompt-lan: "<gold>Zadej LAN IPv4 adresu počítače s MediaMTX:</gold>"
+  prompt-lan-multiple: "<gold>Bylo nalezeno více LAN adres: <addresses>. Zadej správnou:</gold>"
+  prompt-public-host: "<gold>Zadej svou veřejnou IPv4 adresu nebo DNS hostname:</gold>"
+  prompt-public-port: "<gold>Zadej veřejný TCP port přesměrovaný na místní port <port> nebo napiš default:</gold>"
+  prompt-vpn-host: "<gold>Zadej VPN/Tailscale/ZeroTier IP nebo hostname, který používá počítač s OBS:</gold>"
+  prompt-hosting-host: "<gold>Zadej veřejnou IP nebo DNS hostname externího serveru MediaMTX:</gold>"
+  prompt-hosting-port: "<gold>Zadej externí RTMP port MediaMTX nebo napiš default:</gold>"
+  setup-header: |-
+    Nastavení LuigiScreen MediaMTX
+    ==============================
+
+    Situace: <situation>
+
+    1. Umísti mediamtx.yml vedle mediamtx.exe.
+    2. Restartuj MediaMTX.
+    3. MediaMTX musí oznámit RTMP listener na portu <port>.
+
+    OBS:
+      Služba: Vlastní
+      Server: <obs_url>
+      Klíč streamu: nechat prázdný
+      Použít ověření: vypnuto
+
+    LuigiScreen config.yml:
+      stream:
+        url: "<plugin_url>"
+
+  setup-same-pc: |-
+    OBS, MediaMTX a Minecraft server běží na stejném počítači.
+    Obvykle není potřeba měnit router ani firewall.
+  setup-lan: |-
+    Ve firewallu počítače s MediaMTX povol příchozí TCP port <port>.
+    Port forwarding na routeru není potřeba.
+  setup-internet: |-
+    Pravidlo routeru:
+      Veřejný TCP <public_port> -> <lan_host> TCP <local_port>
+
+    Pro počítač s MediaMTX nastav stálou LAN adresu a ve firewallu povol
+    příchozí TCP port <local_port>.
+  setup-vpn: |-
+    OBS musí být připojené ke stejné síti VPN/Tailscale/ZeroTier.
+    Pokud firewall spojení blokuje, povol na VPN rozhraní TCP port <port>.
+  setup-hosting: |-
+    Tento mediamtx.yml patří na externí počítač s MediaMTX.
+    Otevři na něm TCP port <port>. LuigiScreen používá oddělený účet pouze pro čtení.
+  setup-security: |-
+    Zabezpečení:
+      Tento soubor uchovávej v soukromí. Obsahuje vygenerované přihlašovací údaje.
+      RTSP, HLS, WebRTC, SRT a MoQ jsou vypnuté.
+
+logs:
+  reload-stop-failed: "Opětovné načtení bylo zrušeno, protože se RTMP dekodér neukončil."
+  reload-success: "Konfigurace, jazyk a plátno byly znovu načteny."
+  reload-failed: "LuigiScreen se nepodařilo znovu načíst: <error>"
+  remove-stop-failed: "Odstranění plátna bylo zrušeno, protože RTMP dekodér stále běží."
+  saved-screen-invalid: "Uložená poloha plátna není platná. Použij znovu /screen create 7 4."
+  saved-screen-too-large: "Uložené plátno překračuje nastavené limity. Uprav limity nebo ho vytvoř znovu."
+  render-failed: "Vykreslení přes MapEngine selhalo: <error>"
+  decoder-stop-failed: "RTMP dekodér se bezpečně neukončil. Plátno zůstalo zachované."
+  stream-connected: "Připojeno k RTMP streamu: <url> (<width>x<height>)"
+  mediamtx-failed: "Nastavení MediaMTX selhalo: <error>"

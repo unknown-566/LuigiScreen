@@ -1,0 +1,183 @@
+prefix: "<dark_gray>[<green>LuigiScreen</green>]</dark_gray> "
+
+common:
+  none: "none"
+  never: "never"
+  unknown: "unknown"
+  not-available: "N/A"
+
+commands:
+  no-display: "<red>Create a screen first: /screen create 7 4</red>"
+  stream-connecting: "<green>Connecting to the RTMP stream...</green>"
+  stream-already-running: "<red>The stream is already running.</red>"
+  stream-stopped: "<green>The stream has been stopped.</green>"
+  decoder-stopping: "<red>The decoder is still stopping. Try again in a few seconds.</red>"
+  display-removed: "<green>The screen has been removed.</green>"
+  display-remove-failed: "<red>The decoder is still stopping. The screen was left intact.</red>"
+  reload-success: "<green>The configuration, language and screen were reloaded.</green>"
+  reload-failed: "<red>Reload failed. Check the server console.</red>"
+  debug-player-only: "<red>The debug boss bar can only be used by a player.</red>"
+  debug-enabled: "<green>Debug boss bar and sidebar enabled. Run /screen debug again to disable them.</green>"
+  debug-disabled: "<green>Debug boss bar and sidebar disabled.</green>"
+  mediamtx-player-only: "<red>The MediaMTX setup wizard can only be used by a player.</red>"
+  create-player-only: "<red>This command must be used by a player.</red>"
+  create-size: "<red>The size must be between 1x1 and <max_width>x<max_height> maps.</red>"
+  create-map-limit: "<red>A screen can contain at most <max_maps> maps.</red>"
+  create-look-at-wall: "<red>Look at the upper-left block of a vertical wall.</red>"
+  create-success: "<green>Created a <width>x<height> screen. Connecting to the stream...</green>"
+  create-failed: "<red>The previous decoder is still stopping. Try again in a few seconds.</red>"
+  help-create: "<white>/screen create [width] [height]</white><gray> - creates a screen on a wall</gray>"
+  help-control: "<white>/screen start|stop|status|remove|reload</white>"
+  help-debug: "<white>/screen debug</white><gray> - toggles the live performance boss bar and sidebar</gray>"
+  help-mediamtx: "<white>/screen mediamtx <argument></white><gray> - generates a guided MediaMTX configuration</gray>"
+  mediamtx-argument: "situation"
+
+status:
+  no-display: "<gray>No screen has been created.</gray>"
+  line: "<gray>Screen <width>x<height>, stream: <stream>, stream error: <stream_error>, effective FPS: <fps>, viewers: <viewers>, received/rendered: <received>/<rendered>, render error: <render_error>, world: <world>, facing: <facing>, URL: <url></gray>"
+
+screen:
+  title: "LuigiSMP"
+  connecting: "Connecting..."
+  stopped: "Stream stopped"
+  waiting: "Waiting for stream"
+  offline: "Stream offline"
+
+states:
+  stopped: "stopped"
+  stopping: "stopping"
+  connecting: "connecting"
+  live: "live"
+  paused_no_viewers: "paused (no viewers)"
+  waiting_for_stream: "waiting for stream"
+
+directions:
+  north: "north"
+  south: "south"
+  east: "east"
+  west: "west"
+
+situations:
+  same-pc: "same computer"
+  lan: "local network"
+  internet: "internet"
+  vpn: "VPN"
+  hosting: "external hosting"
+
+errors:
+  none: "none"
+  stream_offline: "stream offline"
+  stream_ended: "stream ended"
+
+debug:
+  starting: "LuigiScreen debug starting..."
+  sidebar-title: "<green><bold>LuigiScreen Debug</bold></green>"
+  sidebar-stream: "<gray>Stream:</gray> <white><state></white>"
+  sidebar-source: "<gray>Source:</gray> <white><resolution></white> <dark_gray>(<age>)</dark_gray>"
+  sidebar-screen: "<gray>Screen:</gray> <white><width>x<height> / <maps> maps</white>"
+  sidebar-output: "<gray>Output:</gray> <white><width>x<height> px</white>"
+  sidebar-viewers: "<gray>Viewers:</gray> <white><viewers></white>"
+  sidebar-fps: "<gray>FPS in/out:</gray> <white><input>/<output></white>"
+  sidebar-frames: "<gray>Frames in/out:</gray> <white><received>/<rendered></white>"
+  sidebar-queue: "<gray>Queue/replaced:</gray> <white><queue> / <replaced></white>"
+  sidebar-render: "<gray>Render last/avg:</gray> <white><last>/<average> ms</white>"
+  sidebar-heap: "<gray>Heap:</gray> <white><used>/<max></white>"
+  sidebar-buffers: "<gray>Image buffers:</gray> <white>~<buffers></white>"
+  sidebar-cpu: "<gray>CPU process/system:</gray> <white><process>/<system></white>"
+  sidebar-server: "<gray>TPS/MSPT:</gray> <white><tps>/<mspt></white>"
+  sidebar-runtime: "<gray>Uptime/threads:</gray> <white><uptime> / <threads></white>"
+  sidebar-health: "<gray>Reconnects/errors:</gray> <white><reconnects> / <errors></white>"
+  stream: "[STREAM] <state> | Source <resolution> | Last frame <age>"
+  output: "[OUTPUT] <width>x<height> maps (<maps>) | <pixels_width>x<pixels_height> px | Viewers <viewers> | <fps> FPS"
+  frames: "[FRAMES] In <received> (<received_fps>/s) | Out <rendered> (<rendered_fps>/s) | Replaced <replaced> (<replaced_fps>/s) | Queue <queue>"
+  render: "[RENDER] Last <last> ms | Average <average> ms | Budget <budget> ms"
+  memory: "[MEMORY] JVM heap <heap_used>/<heap_max> | Non-heap <non_heap> | System <system_used>/<system_total>"
+  buffers: "[BUFFERS] LuigiScreen images ~<buffers> | Native FFmpeg and MapEngine memory is not tracked"
+  cpu: "[CPU] Process <process> | System <system> | Threads <threads>"
+  server: "[SERVER] TPS <tps> | MSPT <mspt> | Uptime <uptime> | GC <collections>/<gc_time> ms"
+  health: "[HEALTH] Reconnect attempts <reconnects> | Stream error <stream_error> | Render error <render_error>"
+
+mediamtx:
+  generated: "<green>MediaMTX setup generated for <situation>.</green>"
+  folder: "<gray>Folder: <folder></gray>"
+  obs-server: "<aqua>OBS server: <url></aqua>"
+  obs-options: "<gray>Stream key: leave empty | Use authentication: disabled</gray>"
+  decoder-switching: "<yellow>The RTMP decoder is switching safely in the background.</yellow>"
+  private-warning: "<yellow>Keep setup.txt private. It contains generated credentials.</yellow>"
+  failed: "<red>MediaMTX setup failed. Check the server console.</red>"
+  private-answer: "<dark_gray>Your next chat message is private to the setup wizard. Type cancel to stop.</dark_gray>"
+  choose: "<yellow>Choose a MediaMTX situation:</yellow>"
+  option-same-pc: "<white>/screen mediamtx same-pc - everything runs on one computer</white>"
+  option-lan: "<white>/screen mediamtx lan - OBS is on another computer in the same network</white>"
+  option-internet: "<white>/screen mediamtx internet - OBS connects through public IP and port forwarding</white>"
+  option-vpn: "<white>/screen mediamtx vpn - CGNAT, Tailscale or ZeroTier</white>"
+  option-hosting: "<white>/screen mediamtx hosting - MediaMTX runs on another server</white>"
+  invalid-host: "<red>Enter a valid IPv4 address or hostname. Type cancel to stop.</red>"
+  invalid-public-host: "<red>Enter your public IPv4 address or DNS hostname. Type cancel to stop.</red>"
+  invalid-vpn-host: "<red>Enter a valid VPN IP address or hostname. Type cancel to stop.</red>"
+  invalid-hosting-host: "<red>Enter the MediaMTX IPv4 address or DNS hostname. Type cancel to stop.</red>"
+  invalid-port: "<red>Enter a TCP port from 1 to 65535, or type default. Type cancel to stop.</red>"
+  cancelled: "<yellow>MediaMTX setup cancelled.</yellow>"
+  timeout: "<yellow>MediaMTX setup timed out. Run the command again.</yellow>"
+  prompt-lan: "<gold>Enter the LAN IPv4 address of the MediaMTX computer:</gold>"
+  prompt-lan-multiple: "<gold>Multiple LAN addresses were found: <addresses>. Enter the correct one:</gold>"
+  prompt-public-host: "<gold>Enter your public IPv4 address or DNS hostname:</gold>"
+  prompt-public-port: "<gold>Enter the public TCP port forwarded to local port <port> (or type default):</gold>"
+  prompt-vpn-host: "<gold>Enter the VPN/Tailscale/ZeroTier IP or hostname used by the OBS computer:</gold>"
+  prompt-hosting-host: "<gold>Enter the public IP or DNS hostname of the external MediaMTX server:</gold>"
+  prompt-hosting-port: "<gold>Enter the external MediaMTX RTMP port (or type default):</gold>"
+  setup-header: |-
+    LuigiScreen MediaMTX setup
+    ==========================
+
+    Situation: <situation>
+
+    1. Put mediamtx.yml next to mediamtx.exe.
+    2. Restart MediaMTX.
+    3. MediaMTX must report an RTMP listener on port <port>.
+
+    OBS:
+      Service: Custom
+      Server: <obs_url>
+      Stream key: leave empty
+      Use authentication: disabled
+
+    LuigiScreen config.yml:
+      stream:
+        url: "<plugin_url>"
+
+  setup-same-pc: |-
+    OBS, MediaMTX and the Minecraft server run on the same computer.
+    No router or firewall change is normally required.
+  setup-lan: |-
+    Allow inbound TCP <port> in the MediaMTX computer firewall.
+    No router port forwarding is required.
+  setup-internet: |-
+    Router rule:
+      Public TCP <public_port> -> <lan_host> TCP <local_port>
+
+    Keep the MediaMTX computer LAN address reserved/static and allow inbound
+    TCP <local_port> in its firewall.
+  setup-vpn: |-
+    OBS must be connected to the same VPN/Tailscale/ZeroTier network.
+    Allow inbound TCP <port> on the VPN interface if the firewall blocks it.
+  setup-hosting: |-
+    This mediamtx.yml belongs on the external MediaMTX machine.
+    Open TCP <port> there. LuigiScreen has been configured with a separate
+    read-only account.
+  setup-security: |-
+    Security:
+      Keep this file private. It contains generated stream credentials.
+      RTSP, HLS, WebRTC, SRT and MoQ are disabled.
+
+logs:
+  reload-stop-failed: "Reload cancelled because the RTMP decoder did not stop."
+  reload-success: "Configuration, language and screen were reloaded."
+  reload-failed: "Could not reload LuigiScreen: <error>"
+  remove-stop-failed: "Screen removal cancelled because the RTMP decoder is still running."
+  saved-screen-invalid: "Saved screen location is invalid. Use /screen create 7 4 again."
+  saved-screen-too-large: "Saved screen exceeds the configured size limits. Adjust screen limits or create it again."
+  render-failed: "MapEngine render failed: <error>"
+  decoder-stop-failed: "RTMP decoder did not stop safely. The screen was kept alive."
+  stream-connected: "Connected to RTMP stream: <url> (<width>x<height>)"
+  mediamtx-failed: "MediaMTX setup failed: <error>"

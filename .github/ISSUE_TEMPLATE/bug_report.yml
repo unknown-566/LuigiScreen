@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a reproducible LuigiScreen problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove passwords, stream keys, tokens and private addresses before submitting.
+
+  - type: input
+    id: version
+    attributes:
+      label: LuigiScreen version
+      placeholder: 1.1.0-alpha.7
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Server platform
+      placeholder: Paper 1.21.11, Java 21, Linux x86_64
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: Explain what happened and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Run ...
+        2. Start ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: text
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed passwords, tokens, stream keys and private addresses.
+          required: true

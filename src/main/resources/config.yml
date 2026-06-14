@@ -1,0 +1,44 @@
+language: cs
+
+stream:
+  url: "rtmp://127.0.0.1:55556/screen"
+  fps: 8
+  reconnect-delay-seconds: 3
+  reconnect-max-delay-seconds: 30
+
+screen:
+  auto-start: true
+  viewer-distance: 64
+  glowing-frames: false
+  dithering: false
+  max-width: 10
+  max-height: 6
+  max-total-maps: 60
+  configured: false
+  world: ""
+  corner-a: ""
+  corner-b: ""
+  facing: "NORTH"
+
+performance:
+  # Reduces FPS automatically on very large screens.
+  adaptive-fps: true
+  max-map-updates-per-second: 400
+  minimum-fps: 0.2
+  # Avoids video scaling and map conversion when nobody is near the screen.
+  pause-rendering-without-viewers: true
+  # Delta frames need an additional full-size memory buffer.
+  delta-updates-max-maps: 256
+
+logging:
+  # FFmpeg uses a process-wide log level shared with other JavaCV plugins.
+  # Available values: quiet, error, warning, info, debug
+  ffmpeg-level: quiet
+
+debug:
+  # The boss bar is updated on the main thread. 10 ticks equals 0.5 seconds.
+  bossbar-update-ticks: 10
+  # Also show a personal 15-line statistics sidebar while debug is enabled.
+  sidebar-enabled: true
+  # Each statistics page stays visible for this many seconds.
+  page-duration-seconds: 2

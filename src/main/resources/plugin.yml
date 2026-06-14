@@ -1,0 +1,19 @@
+name: LuigiScreen
+version: '${project.version}'
+main: cz.luigismp.screen.LuigiScreenPlugin
+api-version: '1.21.11'
+depend: [MapEngine]
+authors: [LuigiSMP]
+description: Displays a local RTMP stream on a MapEngine screen.
+
+commands:
+  luigiscreen:
+    description: Manage the LuigiSMP live screen.
+    aliases: [screen]
+    usage: /screen <create|start|stop|remove|status|reload|debug|mediamtx>
+    permission: luigiscreen.admin
+
+permissions:
+  luigiscreen.admin:
+    description: Allows management of the live screen.
+    default: op
