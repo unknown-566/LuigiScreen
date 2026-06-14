@@ -13,7 +13,9 @@ need a client mod.
 ## Features
 
 - Live RTMP video on Minecraft map screens
-- Configurable dimensions and orientation
+- Multiple named screens with independent settings
+- Shared FFmpeg decoding for screens using the same URL
+- Configurable dimensions, locations and orientation
 - Automatic reconnect with exponential backoff
 - Decoder pause when no players are near the screen
 - Adaptive FPS and map-update limits
@@ -53,8 +55,8 @@ Example:
 
 ```text
 /screen mediamtx same-pc
-/screen create 7 4
-/screen start
+/screen create main 7 4
+/screen start main
 ```
 
 Complete documentation:
@@ -64,12 +66,15 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 
 | Command | Description |
 | --- | --- |
-| `/screen create <width> <height>` | Create a map screen |
-| `/screen start` | Start the decoder and renderer |
-| `/screen stop` | Stop streaming without deleting the screen |
-| `/screen remove` | Remove the configured screen |
-| `/screen status` | Show screen and stream state |
-| `/screen reload` | Reload configuration, localization and the screen |
+| `/screen create <name> [width] [height]` | Create a named map screen |
+| `/screen clone <source> <new-name>` | Create another screen that shares the source URL |
+| `/screen list` | List all screens and masked source URLs |
+| `/screen start <name\|all>` | Enable one or every screen |
+| `/screen stop <name\|all>` | Disable streaming without deleting screens |
+| `/screen remove <name>` | Remove one screen |
+| `/screen status [name]` | Show the registry summary or detailed screen state |
+| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Change an independent screen setting |
+| `/screen reload` | Reload configuration, localization and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a MediaMTX configuration |
 
@@ -87,13 +92,16 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 26 automated tests covering:
+The current suite contains 33 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
 - Screen dimensions and total-map validation
 - Configuration limit clamping
 - Adaptive FPS, minimum FPS and maximum FPS limits
+- Named screen validation and legacy geometry migration helpers
+- URL-based source grouping for cloned screens
+- Reference-counted shared video-frame lifetime
 - MediaMTX generation
 - Localization files and debug text formatting
 
@@ -102,8 +110,13 @@ The current suite contains 26 automated tests covering:
 The current artifact supports Windows x86_64 and Linux x86_64. It does not
 support ARM, macOS or Folia.
 
-The default screen limit is 10x6 maps and 60 maps total. Larger screens can
+The default per-screen limit is 10x6 maps and 60 maps. Larger screens can
 consume substantial CPU, memory and network bandwidth.
+
+Each screen stores its own `url`, `fps`, `distance`, `world`, `location`,
+`width`, `height` and `enabled` value. Screens with the exact same normalized
+URL automatically use one FFmpeg decoder and independently render the shared
+latest frame.
 
 ## Free and Plus editions
 

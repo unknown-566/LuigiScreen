@@ -52,6 +52,16 @@ class ScreenPolicyTest {
     }
 
     @Test
+    void readsDimensionsBackFromSavedCorners() {
+        BlockVector first = new BlockVector(10, 20, 30);
+        BlockVector second = ScreenPolicy.secondCorner(
+                first, BlockFace.WEST, 7, 4);
+
+        assertEquals(7, ScreenPolicy.width(first, second, BlockFace.WEST));
+        assertEquals(4, ScreenPolicy.height(first, second));
+    }
+
+    @Test
     void clampsInvalidConfiguredLimits() {
         assertEquals(1, ScreenPolicy.maxDimension(-20));
         assertEquals(10, ScreenPolicy.maxDimension(10));

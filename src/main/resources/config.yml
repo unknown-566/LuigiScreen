@@ -7,6 +7,7 @@ stream:
   reconnect-max-delay-seconds: 30
 
 screen:
+  # Defaults used by newly created screens and by the legacy config migration.
   auto-start: true
   viewer-distance: 64
   glowing-frames: false
@@ -19,6 +20,25 @@ screen:
   corner-a: ""
   corner-b: ""
   facing: "NORTH"
+
+# Every screen stores its own source and rendering settings here.
+# Screens with the exact same URL automatically share one FFmpeg decoder.
+# Example generated entry:
+# screens:
+#   main:
+#     url: "rtmp://127.0.0.1:55556/screen"
+#     fps: 8.0
+#     distance: 64.0
+#     world: world
+#     location: "0,80,0"
+#     width: 7
+#     height: 4
+#     facing: NORTH
+#     enabled: true
+screens: {}
+
+migration:
+  single-screen-completed: false
 
 performance:
   # Reduces FPS automatically on very large screens.

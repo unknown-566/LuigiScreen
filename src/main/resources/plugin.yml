@@ -10,7 +10,7 @@ commands:
   luigiscreen:
     description: Manage the LuigiSMP live screen.
     aliases: [screen]
-    usage: /screen <create|start|stop|remove|status|reload|debug|mediamtx>
+    usage: /screen <create|clone|list|start|stop|remove|status|set|reload|debug|mediamtx>
     permission: luigiscreen.admin
 
 permissions:

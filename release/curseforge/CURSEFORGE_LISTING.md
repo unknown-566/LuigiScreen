@@ -90,7 +90,9 @@ Players do not need to install a client mod.
 ## Features
 
 - Live RTMP video rendered on Minecraft map screens
-- Configurable screen width, height and wall orientation
+- Multiple named screens with independent settings
+- One shared FFmpeg decoder for screens using the same URL
+- Configurable screen width, height, world, location and wall orientation
 - Persistent screen configuration across server restarts
 - Automatic RTMP reconnect with exponential backoff
 - Viewer-distance detection
@@ -163,8 +165,8 @@ Example for a 7x4 screen:
 
 ```text
 /screen mediamtx same-pc
-/screen create 7 4
-/screen start
+/screen create main 7 4
+/screen start main
 ```
 
 Do not use plugin hot-reload tools when replacing LuigiScreen. Stop the Java
@@ -175,12 +177,15 @@ shutdown.
 
 | Command | Description |
 | --- | --- |
-| `/screen create <width> <height>` | Create a screen on the targeted wall |
-| `/screen start` | Start the RTMP decoder and map renderer |
-| `/screen stop` | Stop streaming without deleting the screen |
-| `/screen remove` | Remove the configured screen |
-| `/screen status` | Show the current screen and stream state |
-| `/screen reload` | Reload configuration, messages and the screen |
+| `/screen create <name> [width] [height]` | Create a named screen on the targeted wall |
+| `/screen clone <source> <new-name>` | Clone a screen and share its source URL |
+| `/screen list` | List every screen |
+| `/screen start <name\|all>` | Enable one or every screen |
+| `/screen stop <name\|all>` | Disable screens without deleting them |
+| `/screen remove <name>` | Remove one screen |
+| `/screen status [name]` | Show registry or detailed screen state |
+| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Update one screen |
+| `/screen reload` | Reload configuration, messages and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
@@ -199,9 +204,12 @@ hosting
 
 ## Performance and safety
 
-The default public configuration limits screens to `10x6` maps and 60 maps in
-total. Adaptive FPS, viewer pause and map-update limits help protect the
+The default public configuration limits each screen to `10x6` maps and 60
+maps. Adaptive FPS, viewer pause and map-update limits help protect the
 server and connected clients.
+
+Screens with the same URL share one FFmpeg decoder and decoded image. Each
+screen still has its own MapEngine rendering and packet cost.
 
 Large displays can still consume significant CPU, memory and network
 bandwidth. Test `/screen debug` with real players before increasing any safety
@@ -213,8 +221,6 @@ addresses before sharing complete configuration files or logs.
 
 ## Current alpha limitations
 
-- One configured screen per server
-- One RTMP stream
 - Video only; stream audio is not played in Minecraft
 - No ARM or macOS native libraries
 - No Folia support
@@ -250,18 +256,18 @@ as official LuigiScreen releases.
 - Third-party notices: https://github.com/unknown-566/LuigiScreen/blob/main/THIRD_PARTY_NOTICES.md
 ````
 
-## First uploaded file
+## Current uploaded file
 
 **Display name:**
 
 ```text
-LuigiScreen 1.1.0-alpha.7
+LuigiScreen 1.1.0-alpha.8
 ```
 
 **File:**
 
 ```text
-LuigiScreen-1.1.0-alpha.7.jar
+LuigiScreen-1.1.0-alpha.8.jar
 ```
 
 **Release type:** Alpha
@@ -275,12 +281,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,224,362 bytes
+**File size:** 55,247,077 bytes
 
 **SHA-256:**
 
 ```text
-4B07AF4B50DCC03BEF990E01D51D3CD7686925E323E49C989A3AB27AECEA3D21
+73578F893A1848743B835C6147F359DBA8D166885F7F01F3ECAA0A4913EF0587
 ```
 
 ## File dependency
@@ -302,28 +308,23 @@ Do not include a direct external JAR download link in the CurseForge
 description. CurseForge moderation does not allow external file download
 links.
 
-## First file changelog
+## Current file changelog
 
 Paste this into the file changelog:
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.7
-
-This is the first public CurseForge alpha release of LuigiScreen Free.
+## LuigiScreen 1.1.0-alpha.8
 
 ### Features
 
-- Live RTMP video rendering on configurable Minecraft map screens
-- OBS and MediaMTX streaming workflow
-- Persistent screen configuration
-- Automatic reconnect with exponential backoff
-- Viewer-distance based decoder pause
-- Adaptive FPS and map-update safety limits
-- Guided MediaMTX setup for five network situations
-- Czech and English localization
-- Performance boss bar and 15-line debug sidebar
-- Masked RTMP credentials
-- 26 automated tests covering URL masking, screen geometry, FPS limits and configuration validation
+- Multiple named screens with independent settings
+- `/screen clone` and URL-based source sharing
+- One FFmpeg decoder for every unique RTMP URL
+- Reference-counted decoded frames shared by clones
+- Independent MapEngine rendering and FPS for every screen
+- Automatic migration from the old single-screen configuration
+- Expanded multi-screen status and debug statistics
+- 33 automated tests
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ### Requirements
@@ -336,10 +337,10 @@ This is the first public CurseForge alpha release of LuigiScreen Free.
 
 ### Known limitations
 
-- One screen and one RTMP stream per server
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
 - MediaMTX and an RTMP publisher run separately
+- Every screen still adds MapEngine render and packet cost
 
 This is alpha software. Back up the server and test it away from production.
 ```

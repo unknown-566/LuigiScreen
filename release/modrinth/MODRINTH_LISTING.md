@@ -72,7 +72,9 @@ No client mod is required. Players join with a normal Minecraft client.
 ## Features
 
 - Live RTMP video rendered on Minecraft maps
-- Configurable screen dimensions and orientation
+- Multiple named screens with independent settings
+- One shared FFmpeg decoder for screens using the same URL
+- Configurable screen dimensions, worlds, locations and orientation
 - Automatic reconnect with exponential backoff
 - Viewer-distance detection
 - Decoder pause while nobody is near the screen
@@ -141,8 +143,8 @@ Example:
 
 ```text
 /screen mediamtx same-pc
-/screen create 7 4
-/screen start
+/screen create main 7 4
+/screen start main
 ```
 
 Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.io/luigiscreen/) before exposing MediaMTX to the internet.
@@ -151,12 +153,15 @@ Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.
 
 | Command | Description |
 | --- | --- |
-| `/screen create <width> <height>` | Create a screen on the wall you are looking at |
-| `/screen start` | Start the RTMP decoder and renderer |
-| `/screen stop` | Stop streaming without deleting the screen |
-| `/screen remove` | Remove the configured screen |
-| `/screen status` | Show the current screen and stream state |
-| `/screen reload` | Reload configuration, localization and the screen |
+| `/screen create <name> [width] [height]` | Create a named screen on the wall you are looking at |
+| `/screen clone <source> <new-name>` | Clone a screen and share its source URL |
+| `/screen list` | List screens and masked source URLs |
+| `/screen start <name\|all>` | Enable one or every screen |
+| `/screen stop <name\|all>` | Disable screens without deleting them |
+| `/screen remove <name>` | Remove one screen |
+| `/screen status [name]` | Show registry or detailed screen state |
+| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Update one screen |
+| `/screen reload` | Reload configuration, localization and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
@@ -164,14 +169,16 @@ Management commands require the `luigiscreen.admin` permission, which is granted
 
 ## Performance safeguards
 
-The default public configuration limits screens to `10x6` maps and 60 maps in total. Adaptive FPS and map-update limits protect the server and connected clients.
+The default public configuration limits each screen to `10x6` maps and 60 maps. Adaptive FPS and map-update limits protect the server and connected clients.
 
 Large screens can still consume significant CPU, memory and network bandwidth. Increase the limits only after testing `/screen debug` with real players.
 
+Screens with an identical RTMP URL share one decoder and one decoded image.
+MapEngine scaling, rendering and packets still run independently for every
+screen because their sizes, FPS and viewers may differ.
+
 ## Current alpha limitations
 
-- One configured screen per server
-- One RTMP stream
 - Video only; Minecraft does not receive stream audio
 - No ARM or macOS native libraries
 - No Folia support
@@ -193,11 +200,11 @@ Bug reports should include the output of `/screen status`, relevant console logs
 - [Czech quick start](https://unknown-56-works.gitbook.io/luigiscreen/czech/quick-start)
 ````
 
-## First version
+## Current version
 
-**Version number:** `1.1.0-alpha.7`
+**Version number:** `1.1.0-alpha.8`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.7`
+**Version title:** `LuigiScreen 1.1.0-alpha.8`
 
 **Release channel:** Alpha
 
@@ -210,42 +217,37 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.7.jar
+LuigiScreen-1.1.0-alpha.8.jar
 ```
 
-**File size:** 55,224,362 bytes
+**File size:** 55,247,077 bytes
 
 **SHA-256:**
 
 ```text
-4B07AF4B50DCC03BEF990E01D51D3CD7686925E323E49C989A3AB27AECEA3D21
+73578F893A1848743B835C6147F359DBA8D166885F7F01F3ECAA0A4913EF0587
 ```
 
 **Dependency:**
 
 - MapEngine 1.8.12: Required
 
-## First version changelog
+## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.7
-
-This is the first public alpha release.
+## LuigiScreen 1.1.0-alpha.8
 
 ### Highlights
 
-- Live RTMP video rendering through MapEngine
-- OBS and MediaMTX workflow
-- Configurable map screens
-- Windows x86_64 and Linux x86_64 FFmpeg natives
-- Automatic reconnect and offline states
-- Viewer-distance based decoder pause
-- Adaptive FPS and map-update limits
-- Guided MediaMTX configuration
-- Czech and English localization
-- Performance boss bar and 15-line debug sidebar
-- RTMP credential masking
-- 26 automated tests covering URL masking, screen geometry, FPS limits and configuration validation
+- Multiple named screens
+- Independent URL, FPS, distance, world, location, width, height and enabled state per screen
+- `/screen clone` for creating another display from an existing screen
+- One shared FFmpeg decoder for every unique RTMP URL
+- Reference-counted shared frames without a decoded-image copy per clone
+- Independent MapEngine rendering and latest-frame pacing for every screen
+- Automatic migration from the old single-screen configuration
+- Expanded multi-screen status and debug statistics
+- 33 automated tests
 
 ### Platform support
 
@@ -257,10 +259,10 @@ This is the first public alpha release.
 
 ### Known limitations
 
-- One screen and one RTMP stream per server
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
 - MediaMTX and an RTMP publisher are separate requirements
+- Every screen still adds MapEngine render and packet cost even when decoding is shared
 
 Read the [installation guide](https://unknown-56-works.gitbook.io/luigiscreen/getting-started/installation) before installing.
 ```
@@ -318,7 +320,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.7` uploaded as Alpha
+- [ ] `1.1.0-alpha.8` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

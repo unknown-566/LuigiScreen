@@ -32,17 +32,25 @@ final class ScreenPolicy {
 
     static boolean isSizeAllowed(BlockVector first, BlockVector second, BlockFace face,
                                  int maxWidth, int maxHeight, int maxMaps) {
-        int width = switch (face) {
-            case NORTH, SOUTH -> Math.abs(first.getBlockX() - second.getBlockX()) + 1;
-            case EAST, WEST -> Math.abs(first.getBlockZ() - second.getBlockZ()) + 1;
-            default -> 0;
-        };
-        int height = Math.abs(first.getBlockY() - second.getBlockY()) + 1;
+        int width = width(first, second, face);
+        int height = height(first, second);
         return width >= 1
                 && height >= 1
                 && width <= maxWidth
                 && height <= maxHeight
                 && (long) width * height <= maxMaps;
+    }
+
+    static int width(BlockVector first, BlockVector second, BlockFace face) {
+        return switch (face) {
+            case NORTH, SOUTH -> Math.abs(first.getBlockX() - second.getBlockX()) + 1;
+            case EAST, WEST -> Math.abs(first.getBlockZ() - second.getBlockZ()) + 1;
+            default -> 0;
+        };
+    }
+
+    static int height(BlockVector first, BlockVector second) {
+        return Math.abs(first.getBlockY() - second.getBlockY()) + 1;
     }
 
     static double effectiveFps(double configuredFps, boolean adaptive, int width, int height,

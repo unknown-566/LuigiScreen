@@ -185,6 +185,9 @@ final class DebugBossBarManager {
                         "age", DebugText.age(screen.lastFrameAgeMillis(),
                                 plugin.messages().plain("common.never"))),
                 plugin.messages().component("debug.sidebar-screen",
+                        "screens", screen.screenCount(),
+                        "enabled", screen.enabledScreenCount(),
+                        "sources", screen.sourceCount(),
                         "width", screen.mapWidth(), "height", screen.mapHeight(),
                         "maps", screen.mapCount()),
                 plugin.messages().component("debug.sidebar-output",
@@ -276,6 +279,9 @@ final class DebugBossBarManager {
 
     private Page outputPage(DebugSnapshot screen) {
         Component title = plugin.messages().component("debug.output",
+                "screens", screen.screenCount(),
+                "enabled", screen.enabledScreenCount(),
+                "sources", screen.sourceCount(),
                 "width", screen.mapWidth(),
                 "height", screen.mapHeight(),
                 "maps", screen.mapCount(),

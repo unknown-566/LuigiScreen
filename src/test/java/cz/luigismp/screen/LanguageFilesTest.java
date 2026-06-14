@@ -33,6 +33,9 @@ class LanguageFilesTest {
             YamlConfiguration language = load(resource);
             assertNotNull(language.getString("prefix"));
             assertNotNull(language.getString("commands.reload-success"));
+            assertNotNull(language.getString("commands.clone-success"));
+            assertNotNull(language.getString("commands.set-success"));
+            assertNotNull(language.getString("status.summary"));
             assertNotNull(language.getString("debug.memory"));
             assertNotNull(language.getString("mediamtx.setup-header"));
             assertNotNull(language.getString("screen.offline"));

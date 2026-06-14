@@ -7,7 +7,26 @@ common:
   not-available: "N/A"
 
 commands:
-  no-display: "<red>Nejdříve vytvoř plátno: /screen create 7 4</red>"
+  screen-missing: "<red>Plátno <screen> neexistuje.</red>"
+  target-required: "<red>Existuje více pláten. Přidej název plátna nebo použij all.</red>"
+  invalid-name: "<red>Název plátna smí obsahovat pouze a-z, 0-9, _ nebo - a nejvýše 32 znaků.</red>"
+  name-exists: "<red>Plátno s názvem <screen> už existuje.</red>"
+  clone-usage: "<red>Použití: /screen clone <zdroj> <nový-název></red>"
+  clone-success: "<green>Plátno <source> bylo naklonováno jako <screen>. Dokud mají stejnou URL, sdílejí jeden dekodér.</green>"
+  clone-failed: "<red>Na tomto místě se plátno nepodařilo naklonovat.</red>"
+  list-header: "<green>Počet pláten: <screens>, sdílené zdroje: <sources>:</green>"
+  list-entry: "<gray>- <white><screen></white>: <enabled>, <width>x<height>, <world>, <fps> FPS, <distance> bloků, <url></gray>"
+  screen-started: "<green>Plátno <screen> bylo zapnuto a jeho zdroj se spouští.</green>"
+  screen-stopped: "<green>Plátno <screen> bylo vypnuto.</green>"
+  screen-removed: "<green>Plátno <screen> bylo odstraněno.</green>"
+  all-started: "<green>Zapnuto pláten: <count>.</green>"
+  all-stopped: "<green>Vypnuto pláten: <count>.</green>"
+  set-usage: "<red>Použití: /screen set <název> <url|fps|distance|enabled> <hodnota></red>"
+  set-success: "<green>Vlastnost <property> plátna <screen> byla upravena.</green>"
+  set-invalid: "<red>Neplatná hodnota pro <property>. FPS: 0.1-20, distance: 8-1024, enabled: true/false.</red>"
+  help-clone: "<white>/screen clone <zdroj> <nový-název></white><gray> - vytvoří další plátno se sdíleným zdrojem</gray>"
+  help-set: "<white>/screen set <název> <url|fps|distance|enabled> <hodnota></white>"
+  no-display: "<red>Nejdříve vytvoř plátno: /screen create main 7 4</red>"
   stream-connecting: "<green>Připojuji se k RTMP streamu...</green>"
   stream-already-running: "<red>Stream už běží.</red>"
   stream-stopped: "<green>Stream byl zastaven.</green>"
@@ -24,17 +43,19 @@ commands:
   create-size: "<red>Velikost musí být mezi 1x1 a <max_width>x<max_height> mapami.</red>"
   create-map-limit: "<red>Jedno plátno může obsahovat nejvýše <max_maps> map.</red>"
   create-look-at-wall: "<red>Dívej se na levý horní blok svislé stěny.</red>"
-  create-success: "<green>Vytvořeno plátno <width>x<height>. Připojuji se ke streamu...</green>"
-  create-failed: "<red>Předchozí dekodér se stále ukončuje. Zkus to znovu za několik sekund.</red>"
-  help-create: "<white>/screen create [šířka] [výška]</white><gray> - vytvoří plátno na stěně</gray>"
-  help-control: "<white>/screen start|stop|status|remove|reload</white>"
+  create-success: "<green>Vytvořeno plátno <screen> o velikosti <width>x<height>. Připojuji se ke streamu...</green>"
+  create-failed: "<red>Plátno se nepodařilo vytvořit. Zkontroluj název, velikost a umístění.</red>"
+  help-create: "<white>/screen create <název> [šířka] [výška]</white><gray> - vytvoří pojmenované plátno na stěně</gray>"
+  help-control: "<white>/screen list|status [název]|start|stop <název|all>|remove <název>|reload</white>"
   help-debug: "<white>/screen debug</white><gray> - zapne nebo vypne živý výkonový bossbar a sidebar</gray>"
   help-mediamtx: "<white>/screen mediamtx <argument></white><gray> - spustí průvodce nastavením MediaMTX</gray>"
   mediamtx-argument: "situace"
 
 status:
+  missing: "<red>Plátno <screen> neexistuje.</red>"
+  summary: "<gray>Plátna: <screens>, zapnutá: <enabled>, sdílené zdroje: <sources>, celkem map: <maps>. Použij /screen list nebo /screen status <název>.</gray>"
   no-display: "<gray>Žádné plátno nebylo vytvořeno.</gray>"
-  line: "<gray>Plátno <width>x<height>, stream: <stream>, chyba streamu: <stream_error>, efektivní FPS: <fps>, diváci: <viewers>, přijaté/vykreslené: <received>/<rendered>, chyba vykreslení: <render_error>, svět: <world>, směr: <facing>, URL: <url></gray>"
+  line: "<gray>Plátno <name> <width>x<height>, zapnuto: <enabled>, stream: <stream>, sdílí pláten: <shared>, chyba streamu: <stream_error>, efektivní FPS: <fps>, vzdálenost: <distance>, diváci: <viewers>, přijaté/vykreslené: <received>/<rendered>, chyba vykreslení: <render_error>, svět: <world>, směr: <facing>, URL: <url></gray>"
 
 screen:
   title: "LuigiSMP"
@@ -74,7 +95,7 @@ debug:
   sidebar-title: "<green><bold>LuigiScreen Debug</bold></green>"
   sidebar-stream: "<gray>Stream:</gray> <white><state></white>"
   sidebar-source: "<gray>Zdroj:</gray> <white><resolution></white> <dark_gray>(<age>)</dark_gray>"
-  sidebar-screen: "<gray>Plátno:</gray> <white><width>x<height> / <maps> map</white>"
+  sidebar-screen: "<gray>Plátna/zdroje:</gray> <white><enabled>/<screens> / <sources></white> <dark_gray>(<width>x<height>)</dark_gray>"
   sidebar-output: "<gray>Výstup:</gray> <white><width>x<height> px</white>"
   sidebar-viewers: "<gray>Diváci:</gray> <white><viewers></white>"
   sidebar-fps: "<gray>FPS vstup/výstup:</gray> <white><input>/<output></white>"
@@ -88,7 +109,7 @@ debug:
   sidebar-runtime: "<gray>Doba běhu/vlákna:</gray> <white><uptime> / <threads></white>"
   sidebar-health: "<gray>Reconnecty/chyby:</gray> <white><reconnects> / <errors></white>"
   stream: "[STREAM] <state> | Zdroj <resolution> | Poslední snímek <age>"
-  output: "[VÝSTUP] <width>x<height> map (<maps>) | <pixels_width>x<pixels_height> px | Diváci <viewers> | <fps> FPS"
+  output: "[VÝSTUP] Plátna <enabled>/<screens> | Zdroje <sources> | Hlavní <width>x<height> map (<maps>) | <pixels_width>x<pixels_height> px | Diváci <viewers> | <fps> FPS"
   frames: "[SNÍMKY] Přijato <received> (<received_fps>/s) | Vykresleno <rendered> (<rendered_fps>/s) | Nahrazeno <replaced> (<replaced_fps>/s) | Fronta <queue>"
   render: "[VYKRESLENÍ] Poslední <last> ms | Průměr <average> ms | Limit <budget> ms"
   memory: "[PAMĚŤ] JVM heap <heap_used>/<heap_max> | Non-heap <non_heap> | Systém <system_used>/<system_total>"
@@ -142,9 +163,9 @@ mediamtx:
       Klíč streamu: nechat prázdný
       Použít ověření: vypnuto
 
-    LuigiScreen config.yml:
-      stream:
-        url: "<plugin_url>"
+    LuigiScreen:
+      Globální výchozí URL a plátna používající předchozí výchozí URL
+      se automaticky nastaví na: <plugin_url>
 
   setup-same-pc: |-
     OBS, MediaMTX a Minecraft server běží na stejném počítači.
@@ -170,11 +191,14 @@ mediamtx:
       RTSP, HLS, WebRTC, SRT a MoQ jsou vypnuté.
 
 logs:
+  render-failed-screen: "Vykreslení plátna <screen> přes MapEngine selhalo: <error>"
+  saved-screen-invalid-name: "Uložené plátno <screen> je neplatné a bylo přeskočeno."
+  legacy-migrated: "Staré samostatné plátno bylo převedeno na screens.main."
   reload-stop-failed: "Opětovné načtení bylo zrušeno, protože se RTMP dekodér neukončil."
   reload-success: "Konfigurace, jazyk a plátno byly znovu načteny."
   reload-failed: "LuigiScreen se nepodařilo znovu načíst: <error>"
   remove-stop-failed: "Odstranění plátna bylo zrušeno, protože RTMP dekodér stále běží."
-  saved-screen-invalid: "Uložená poloha plátna není platná. Použij znovu /screen create 7 4."
+  saved-screen-invalid: "Uložená poloha plátna není platná. Použij znovu /screen create main 7 4."
   saved-screen-too-large: "Uložené plátno překračuje nastavené limity. Uprav limity nebo ho vytvoř znovu."
   render-failed: "Vykreslení přes MapEngine selhalo: <error>"
   decoder-stop-failed: "RTMP dekodér se bezpečně neukončil. Plátno zůstalo zachované."

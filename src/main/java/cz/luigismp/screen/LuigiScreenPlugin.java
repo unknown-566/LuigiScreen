@@ -1,15 +1,12 @@
 package cz.luigismp.screen;
 
 import de.pianoman911.mapengine.api.MapEngineApi;
-import de.pianoman911.mapengine.api.clientside.IMapDisplay;
-import de.pianoman911.mapengine.api.drawing.IDrawingSpace;
-import de.pianoman911.mapengine.api.util.Converter;
-import de.pianoman911.mapengine.api.util.FullSpacedColorBuffer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,29 +19,17 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BlockVector;
 import org.bytedeco.javacv.FFmpegLogCallback;
 
-import java.awt.Color;
-import java.awt.color.ColorSpace;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DirectColorModel;
-import java.awt.image.WritableRaster;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_DEBUG;
 import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_ERROR;
@@ -54,30 +39,15 @@ import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_WARNING;
 
 public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
 
-    private final Object renderLock = new Object();
-    private final Set<UUID> spawnedViewers = new HashSet<>();
-    private final AtomicReference<BufferedImage> pendingFrame = new AtomicReference<>();
-    private final AtomicBoolean forceFullFrame = new AtomicBoolean();
-    private final AtomicLong receivedFrames = new AtomicLong();
-    private final AtomicLong renderedFrames = new AtomicLong();
-    private final AtomicLong replacedFrames = new AtomicLong();
-    private final AtomicLong totalRenderNanos = new AtomicLong();
-    private final AtomicLong lastRenderNanos = new AtomicLong();
-
+    private final Map<String, ManagedScreen> screens = new ConcurrentHashMap<>();
+    private final Map<String, SharedStreamSource> sources = new ConcurrentHashMap<>();
     private MapEngineApi mapEngine;
-    private IMapDisplay display;
-    private IDrawingSpace drawing;
-    private FullSpacedColorBuffer previousFrame;
-    private World displayWorld;
-    private RtmpStreamWorker streamWorker;
     private DebugBossBarManager debugBossBars;
     private MediaMtxSetupManager mediaMtxSetup;
     private LocalizationManager messages;
     private BukkitTask viewerTask;
     private BukkitTask streamRestartTask;
     private ScheduledExecutorService renderExecutor;
-    private volatile Player[] receiverSnapshot = new Player[0];
-    private volatile String lastRenderError = "none";
 
     @Override
     public void onEnable() {
@@ -102,12 +72,11 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         mediaMtxSetup = new MediaMtxSetupManager(this);
         Bukkit.getPluginManager().registerEvents(mediaMtxSetup, this);
 
-        loadDisplay();
+        migrateLegacyScreen();
+        loadScreens();
         startRenderExecutor();
         viewerTask = Bukkit.getScheduler().runTaskTimer(this, this::refreshViewers, 20L, 20L);
-        if (hasDisplay() && getConfig().getBoolean("screen.auto-start", true)) {
-            startStream();
-        }
+        startEnabledSources();
     }
 
     @Override
@@ -115,18 +84,21 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         if (viewerTask != null) {
             viewerTask.cancel();
         }
+        cancelPendingStreamRestart();
         if (debugBossBars != null) {
             debugBossBars.stop();
         }
         if (mediaMtxSetup != null) {
             mediaMtxSetup.shutdown();
         }
-        removeDisplay(false);
+        requestStopAllSources();
+        stopAllSources();
+        destroyScreens();
         stopRenderExecutor();
     }
 
-    boolean hasDisplay() {
-        return display != null;
+    LocalizationManager messages() {
+        return messages;
     }
 
     int maxScreenWidth() {
@@ -141,117 +113,285 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         return ScreenPolicy.maxTotalMaps(getConfig().getInt("screen.max-total-maps", 60));
     }
 
-    int screenPixelWidth() {
-        IMapDisplay current = display;
-        return current == null ? 0 : current.pixelWidth();
+    boolean hasScreens() {
+        return !screens.isEmpty();
     }
 
-    int screenPixelHeight() {
-        IMapDisplay current = display;
-        return current == null ? 0 : current.pixelHeight();
+    boolean hasScreen(String id) {
+        return screens.containsKey(ScreenDefinition.normalizeId(id));
     }
 
-    boolean shouldRenderVideo() {
-        return !getConfig().getBoolean("performance.pause-rendering-without-viewers", true)
-                || receiverSnapshot.length > 0;
+    List<String> screenIds() {
+        return screens.keySet().stream().sorted().toList();
     }
 
-    double effectiveFps() {
-        IMapDisplay current = display;
-        return ScreenPolicy.effectiveFps(
+    int screenCount() {
+        return screens.size();
+    }
+
+    ScreenDefinition screenDefinition(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        return screen == null ? null : screen.definition();
+    }
+
+    boolean createScreen(String id, World world, BlockVector location,
+                         int width, int height, BlockFace facing) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        if (!ScreenDefinition.isValidId(normalized) || screens.containsKey(normalized)) {
+            return false;
+        }
+        ScreenDefinition definition = new ScreenDefinition(
+                normalized,
+                defaultStreamUrl(),
                 getConfig().getDouble("stream.fps", 8),
-                getConfig().getBoolean("performance.adaptive-fps", true),
-                current == null ? 0 : current.width(),
-                current == null ? 0 : current.height(),
-                getConfig().getDouble("performance.max-map-updates-per-second", 400),
-                getConfig().getDouble("performance.minimum-fps", 0.2)
+                getConfig().getDouble("screen.viewer-distance", 64),
+                world.getName(),
+                location,
+                width,
+                height,
+                facing,
+                getConfig().getBoolean("screen.auto-start", true)
         );
-    }
-
-    boolean createDisplay(World world, BlockVector a, BlockVector b, BlockFace facing) {
-        if (!isScreenSizeAllowed(a, b, facing)) {
+        if (!isScreenAllowed(definition)) {
             return false;
         }
-        if (!removeDisplay(false)) {
-            return false;
-        }
-        createDisplayInternal(world, a, b, facing);
-
-        FileConfiguration config = getConfig();
-        config.set("screen.configured", true);
-        config.set("screen.world", world.getName());
-        config.set("screen.corner-a", serialize(a));
-        config.set("screen.corner-b", serialize(b));
-        config.set("screen.facing", facing.name());
-        saveConfig();
-
-        renderOfflineFrame(messages.plain("screen.connecting"));
+        persist(definition);
+        ManagedScreen screen = register(definition, world);
+        screen.showOfflineFrame(messages.plain(
+                definition.enabled() ? "screen.connecting" : "screen.stopped"));
         refreshViewers();
-        startStream();
+        if (definition.enabled()) {
+            sourceFor(definition.url()).start();
+        }
         return true;
     }
 
-    boolean startStream() {
-        if (display == null) {
+    boolean cloneScreen(String sourceId, String cloneId, World world,
+                        BlockVector location, BlockFace facing) {
+        ManagedScreen original = screens.get(ScreenDefinition.normalizeId(sourceId));
+        String normalizedClone = ScreenDefinition.normalizeId(cloneId);
+        if (original == null || !ScreenDefinition.isValidId(normalizedClone)
+                || screens.containsKey(normalizedClone)) {
             return false;
         }
-        if (streamWorker != null) {
-            if (!streamWorker.isTerminated()) {
-                return false;
-            }
-            streamWorker = null;
-        }
-
-        streamWorker = new RtmpStreamWorker(
-                this,
-                getConfig().getString("stream.url", "rtmp://127.0.0.1:55556/screen"),
-                effectiveFps(),
-                getConfig().getInt("stream.reconnect-delay-seconds", 3),
-                getConfig().getInt("stream.reconnect-max-delay-seconds", 30)
+        ScreenDefinition source = original.definition();
+        ScreenDefinition clone = new ScreenDefinition(
+                normalizedClone,
+                source.url(),
+                source.fps(),
+                source.distance(),
+                world.getName(),
+                location,
+                source.width(),
+                source.height(),
+                facing,
+                source.enabled()
         );
-        return streamWorker.start();
+        if (!isScreenAllowed(clone)) {
+            return false;
+        }
+        persist(clone);
+        ManagedScreen screen = register(clone, world);
+        screen.showOfflineFrame(messages.plain(
+                clone.enabled() ? "screen.connecting" : "screen.stopped"));
+        refreshViewers();
+        if (clone.enabled()) {
+            sourceFor(clone.url()).start();
+        }
+        return true;
     }
 
-    boolean stopStream() {
-        cancelPendingStreamRestart();
-        RtmpStreamWorker worker = streamWorker;
-        if (worker == null) {
+    boolean removeScreen(String id) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        ManagedScreen screen = screens.get(normalized);
+        if (screen == null) {
+            return false;
+        }
+        SharedStreamSource source = sources.get(sourceKey(screen.definition().url()));
+        if (source != null && source.screenCount() == 1 && !source.stop()) {
+            return false;
+        }
+        screens.remove(normalized);
+        if (source != null) {
+            source.detach(screen);
+            removeUnusedSource(source);
+        }
+        screen.destroy();
+        getConfig().set("screens." + normalized, null);
+        saveConfig();
+        return true;
+    }
+
+    boolean startScreen(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null) {
+            return false;
+        }
+        updateDefinition(screen, screen.definition().withEnabled(true));
+        screen.showOfflineFrame(messages.plain("screen.connecting"));
+        sourceFor(screen.definition().url()).start();
+        return true;
+    }
+
+    boolean stopScreen(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null) {
+            return false;
+        }
+        SharedStreamSource source = sources.get(sourceKey(screen.definition().url()));
+        updateDefinition(screen, screen.definition().withEnabled(false));
+        screen.showOfflineFrame(messages.plain("screen.stopped"));
+        return source == null || source.hasEnabledScreens() || source.stop();
+    }
+
+    int startAllScreens() {
+        int changed = 0;
+        for (String id : screenIds()) {
+            ManagedScreen screen = screens.get(id);
+            if (screen != null && !screen.enabled()) {
+                updateDefinition(screen, screen.definition().withEnabled(true));
+                screen.showOfflineFrame(messages.plain("screen.connecting"));
+                changed++;
+            }
+        }
+        startEnabledSources();
+        return changed;
+    }
+
+    int stopAllScreens() {
+        int changed = 0;
+        for (String id : screenIds()) {
+            ManagedScreen screen = screens.get(id);
+            if (screen != null && screen.enabled()) {
+                updateDefinition(screen, screen.definition().withEnabled(false));
+                screen.showOfflineFrame(messages.plain("screen.stopped"));
+                changed++;
+            }
+        }
+        requestStopAllSources();
+        stopAllSources();
+        return changed;
+    }
+
+    boolean setScreenUrl(String id, String url) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        String trimmed = url == null ? "" : url.trim();
+        if (screen == null || trimmed.isEmpty()) {
+            return false;
+        }
+        ScreenDefinition oldDefinition = screen.definition();
+        if (oldDefinition.url().equals(trimmed)) {
             return true;
         }
-        if (worker.stop()) {
-            streamWorker = null;
-            showOfflineFrameKey("screen.stopped");
-            return true;
+        SharedStreamSource oldSource = sources.get(sourceKey(oldDefinition.url()));
+        if (oldSource != null && oldSource.screenCount() == 1 && !oldSource.stop()) {
+            return false;
         }
-        return false;
+        if (oldSource != null) {
+            oldSource.detach(screen);
+            removeUnusedSource(oldSource);
+        }
+        ScreenDefinition updated = oldDefinition.withUrl(trimmed);
+        updateDefinition(screen, updated);
+        SharedStreamSource newSource = sourceFor(trimmed);
+        newSource.attach(screen);
+        screen.showOfflineFrame(messages.plain(
+                updated.enabled() ? "screen.connecting" : "screen.stopped"));
+        if (updated.enabled()) {
+            newSource.start();
+        }
+        return true;
+    }
+
+    boolean setScreenFps(String id, double fps) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null || fps < 0.1 || fps > 20) {
+            return false;
+        }
+        updateDefinition(screen, screen.definition().withFps(fps));
+        return true;
+    }
+
+    boolean setScreenDistance(String id, double distance) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null || distance < 8 || distance > 1024) {
+            return false;
+        }
+        updateDefinition(screen, screen.definition().withDistance(distance));
+        refreshViewers();
+        return true;
+    }
+
+    boolean setScreenEnabled(String id, boolean enabled) {
+        return enabled ? startScreen(id) : stopScreen(id);
+    }
+
+    Component status() {
+        if (screens.isEmpty()) {
+            return messages.component("status.no-display");
+        }
+        long enabled = screens.values().stream().filter(ManagedScreen::enabled).count();
+        long maps = screens.values().stream()
+                .mapToLong(screen -> (long) screen.width() * screen.height()).sum();
+        return messages.component("status.summary",
+                "screens", screens.size(),
+                "enabled", enabled,
+                "sources", sources.size(),
+                "maps", maps);
+    }
+
+    Component status(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null) {
+            return messages.component("status.missing", "screen", id);
+        }
+        SharedStreamSource source = sources.get(sourceKey(screen.definition().url()));
+        String streamState = source == null ? "stopped" : source.state();
+        String streamError = source == null ? "none" : source.lastError();
+        ScreenDefinition definition = screen.definition();
+        return messages.component("status.line", Map.ofEntries(
+                Map.entry("name", definition.id()),
+                Map.entry("width", screen.width()),
+                Map.entry("height", screen.height()),
+                Map.entry("enabled", definition.enabled()),
+                Map.entry("stream", messages.state(streamState)),
+                Map.entry("stream_error", messages.error(streamError)),
+                Map.entry("fps", String.format(Locale.ROOT, "%.2f", screen.effectiveFps())),
+                Map.entry("viewers", screen.viewers()),
+                Map.entry("received", screen.receivedFrames()),
+                Map.entry("rendered", screen.renderedFrames()),
+                Map.entry("render_error", messages.error(screen.lastRenderError())),
+                Map.entry("world", definition.world()),
+                Map.entry("facing", messages.direction(definition.facing())),
+                Map.entry("distance", String.format(Locale.ROOT, "%.1f", definition.distance())),
+                Map.entry("shared", source == null ? 0 : source.screenCount()),
+                Map.entry("url", StreamUrlSanitizer.mask(definition.url()))
+        ));
     }
 
     boolean reloadScreenConfig() {
-        if (!stopStream()) {
+        cancelPendingStreamRestart();
+        requestStopAllSources();
+        if (!stopAllSources()) {
             getLogger().severe(messages.plain("logs.reload-stop-failed"));
             return false;
         }
-
         stopRenderExecutor();
-        if (!removeDisplay(false)) {
-            startRenderExecutor();
-            return false;
-        }
-
+        destroyScreens();
+        sources.clear();
         try {
             reloadConfig();
             getConfig().options().copyDefaults(true);
             saveConfig();
             messages.load();
             configureFfmpegLogging();
-            if (debugBossBars != null) {
-                debugBossBars.start();
-            }
-            loadDisplay();
+            migrateLegacyScreen();
+            loadScreens();
             startRenderExecutor();
             refreshViewers();
-            if (hasDisplay() && getConfig().getBoolean("screen.auto-start", true)) {
-                startStream();
+            startEnabledSources();
+            if (debugBossBars != null) {
+                debugBossBars.start();
             }
             getLogger().info(messages.plain("logs.reload-success"));
             return true;
@@ -265,74 +405,6 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    boolean removeDisplay(boolean clearConfig) {
-        cancelPendingStreamRestart();
-        RtmpStreamWorker worker = streamWorker;
-        if (worker != null && !worker.stop()) {
-            getLogger().severe(messages.plain("logs.remove-stop-failed"));
-            return false;
-        }
-        streamWorker = null;
-
-        IMapDisplay oldDisplay;
-        synchronized (renderLock) {
-            oldDisplay = display;
-            display = null;
-            drawing = null;
-            previousFrame = null;
-        }
-        BufferedImage queued = pendingFrame.getAndSet(null);
-        if (queued != null) {
-            queued.flush();
-        }
-        forceFullFrame.set(false);
-        receiverSnapshot = new Player[0];
-
-        if (oldDisplay != null) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                oldDisplay.despawn(player);
-            }
-            oldDisplay.destroy();
-        }
-        spawnedViewers.clear();
-        displayWorld = null;
-
-        if (clearConfig) {
-            getConfig().set("screen.configured", false);
-            getConfig().set("screen.world", "");
-            getConfig().set("screen.corner-a", "");
-            getConfig().set("screen.corner-b", "");
-            saveConfig();
-        }
-        return true;
-    }
-
-    Component status() {
-        if (display == null) {
-            return messages.component("status.no-display");
-        }
-        String streamState = streamWorker == null ? "stopped" : streamWorker.state();
-        String streamError = streamWorker == null ? "none" : streamWorker.lastError();
-        return messages.component("status.line", Map.ofEntries(
-                Map.entry("width", display.width()),
-                Map.entry("height", display.height()),
-                Map.entry("stream", messages.state(streamState)),
-                Map.entry("stream_error", messages.error(streamError)),
-                Map.entry("fps", String.format(java.util.Locale.ROOT, "%.2f", effectiveFps())),
-                Map.entry("viewers", spawnedViewers.size()),
-                Map.entry("received", receivedFrames.get()),
-                Map.entry("rendered", renderedFrames.get()),
-                Map.entry("render_error", messages.error(lastRenderError)),
-                Map.entry("world", displayWorld.getName()),
-                Map.entry("facing", messages.direction(display.direction())),
-                Map.entry("url", StreamUrlSanitizer.mask(getConfig().getString("stream.url")))
-        ));
-    }
-
-    LocalizationManager messages() {
-        return messages;
-    }
-
     boolean toggleDebug(Player player) {
         return debugBossBars != null && debugBossBars.toggle(player);
     }
@@ -344,30 +416,20 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     boolean applyGeneratedStreamUrl(String streamUrl) {
-        RtmpStreamWorker worker = streamWorker;
-        boolean restart = worker != null && worker.isRunning();
-
+        String previousDefault = defaultStreamUrl();
         getConfig().set("stream.url", streamUrl);
+        for (ManagedScreen screen : screens.values()) {
+            if (screen.definition().url().equals(previousDefault)) {
+                ScreenDefinition updated = screen.definition().withUrl(streamUrl);
+                persist(updated);
+            }
+        }
         saveConfig();
 
-        boolean shouldStart = hasDisplay()
-                && (restart || getConfig().getBoolean("screen.auto-start", true));
-        if (worker == null || worker.isTerminated()) {
-            streamWorker = null;
-            if (shouldStart) {
-                startStream();
-            }
-            return true;
-        }
-
         cancelPendingStreamRestart();
-        worker.requestStop();
+        requestStopAllSources();
         streamRestartTask = Bukkit.getScheduler().runTaskTimer(
-                this,
-                () -> finishGeneratedStreamRestart(worker, shouldStart),
-                1L,
-                5L
-        );
+                this, this::finishGeneratedStreamReload, 1L, 5L);
         return true;
     }
 
@@ -375,21 +437,229 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         return streamRestartTask != null;
     }
 
-    private void finishGeneratedStreamRestart(RtmpStreamWorker worker, boolean shouldStart) {
-        if (streamWorker != worker) {
-            cancelPendingStreamRestart();
-            return;
-        }
-        if (!worker.isTerminated()) {
-            return;
-        }
+    DebugSnapshot debugSnapshot() {
+        ManagedScreen primary = screens.values().stream()
+                .min(Comparator.comparing(ManagedScreen::id))
+                .orElse(null);
+        SharedStreamSource source = sources.values().stream()
+                .sorted(Comparator
+                        .comparing(SharedStreamSource::isRunning).reversed()
+                        .thenComparing(SharedStreamSource::url))
+                .findFirst()
+                .orElse(null);
+        long received = screens.values().stream().mapToLong(ManagedScreen::receivedFrames).sum();
+        long rendered = screens.values().stream().mapToLong(ManagedScreen::renderedFrames).sum();
+        long replaced = screens.values().stream().mapToLong(ManagedScreen::replacedFrames).sum();
+        long buffers = screens.values().stream()
+                .mapToLong(ManagedScreen::estimatedImageBufferBytes).sum();
+        int viewers = screens.values().stream().mapToInt(ManagedScreen::viewers).sum();
+        boolean queued = screens.values().stream().anyMatch(ManagedScreen::frameQueued);
+        long lastRender = screens.values().stream()
+                .mapToLong(ManagedScreen::lastRenderNanos).max().orElse(0);
+        long averageRender = screens.values().stream()
+                .mapToLong(ManagedScreen::averageRenderNanos).max().orElse(0);
+        String renderError = screens.values().stream()
+                .map(ManagedScreen::lastRenderError)
+                .filter(error -> !"none".equalsIgnoreCase(error))
+                .findFirst().orElse("none");
+        return new DebugSnapshot(
+                source == null ? "stopped" : source.state(),
+                source == null ? "none" : source.lastError(),
+                source == null ? 0 : source.sourceWidth(),
+                source == null ? 0 : source.sourceHeight(),
+                sources.values().stream().mapToLong(SharedStreamSource::reconnects).sum(),
+                source == null ? -1 : source.lastFrameAgeMillis(),
+                primary == null ? 0 : primary.width(),
+                primary == null ? 0 : primary.height(),
+                primary == null ? 0 : primary.pixelWidth(),
+                primary == null ? 0 : primary.pixelHeight(),
+                viewers,
+                received,
+                rendered,
+                replaced,
+                queued,
+                lastRender,
+                averageRender,
+                buffers,
+                primary == null ? 0 : primary.effectiveFps(),
+                renderError,
+                screens.size(),
+                (int) screens.values().stream().filter(ManagedScreen::enabled).count(),
+                sources.size()
+        );
+    }
 
-        streamWorker = null;
-        cancelPendingStreamRestart();
-        showOfflineFrameKey(shouldStart ? "screen.connecting" : "screen.stopped");
-        if (shouldStart) {
-            startStream();
+    private ManagedScreen register(ScreenDefinition definition, World world) {
+        ManagedScreen screen = new ManagedScreen(this, mapEngine, definition, world);
+        screens.put(definition.id(), screen);
+        sourceFor(definition.url()).attach(screen);
+        return screen;
+    }
+
+    private SharedStreamSource sourceFor(String url) {
+        String key = sourceKey(url);
+        return sources.computeIfAbsent(key, ignored -> new SharedStreamSource(this, url.trim()));
+    }
+
+    private void removeUnusedSource(SharedStreamSource source) {
+        if (!source.isUnused()) {
+            return;
         }
+        source.stop();
+        sources.remove(sourceKey(source.url()), source);
+    }
+
+    private void updateDefinition(ManagedScreen screen, ScreenDefinition definition) {
+        screen.updateDefinition(definition);
+        persist(definition);
+        saveConfig();
+    }
+
+    private void persist(ScreenDefinition definition) {
+        String path = "screens." + definition.id();
+        FileConfiguration config = getConfig();
+        config.set(path + ".url", definition.url());
+        config.set(path + ".fps", definition.fps());
+        config.set(path + ".distance", definition.distance());
+        config.set(path + ".world", definition.world());
+        config.set(path + ".location", serialize(definition.location()));
+        config.set(path + ".width", definition.width());
+        config.set(path + ".height", definition.height());
+        config.set(path + ".facing", definition.facing().name());
+        config.set(path + ".enabled", definition.enabled());
+    }
+
+    private void loadScreens() {
+        ConfigurationSection section = getConfig().getConfigurationSection("screens");
+        if (section == null) {
+            return;
+        }
+        for (String rawId : section.getKeys(false)) {
+            String id = ScreenDefinition.normalizeId(rawId);
+            String path = "screens." + rawId;
+            if (!ScreenDefinition.isValidId(id)) {
+                getLogger().warning(messages.plain(
+                        "logs.saved-screen-invalid-name", "screen", rawId));
+                continue;
+            }
+            BlockVector location = deserialize(getConfig().getString(path + ".location", ""));
+            String worldName = getConfig().getString(path + ".world", "");
+            World world = Bukkit.getWorld(worldName);
+            BlockFace facing = parseFace(getConfig().getString(path + ".facing", "NORTH"));
+            ScreenDefinition definition = new ScreenDefinition(
+                    id,
+                    getConfig().getString(path + ".url", defaultStreamUrl()),
+                    getConfig().getDouble(path + ".fps",
+                            getConfig().getDouble("stream.fps", 8)),
+                    getConfig().getDouble(path + ".distance",
+                            getConfig().getDouble("screen.viewer-distance", 64)),
+                    worldName,
+                    location,
+                    getConfig().getInt(path + ".width", 7),
+                    getConfig().getInt(path + ".height", 4),
+                    facing,
+                    getConfig().getBoolean(path + ".enabled",
+                            getConfig().getBoolean("screen.auto-start", true))
+            );
+            if (world == null || facing == null || !isScreenAllowed(definition)
+                    || definition.url().isBlank()) {
+                getLogger().warning(messages.plain(
+                        "logs.saved-screen-invalid-name", "screen", rawId));
+                continue;
+            }
+            ManagedScreen screen = register(definition, world);
+            screen.showOfflineFrame(messages.plain(
+                    definition.enabled() ? "screen.waiting" : "screen.stopped"));
+        }
+    }
+
+    private void migrateLegacyScreen() {
+        ConfigurationSection existing = getConfig().getConfigurationSection("screens");
+        if (existing != null && !existing.getKeys(false).isEmpty()) {
+            return;
+        }
+        if (getConfig().getBoolean("migration.single-screen-completed", false)
+                || !getConfig().getBoolean("screen.configured", false)) {
+            return;
+        }
+        BlockVector first = deserialize(getConfig().getString("screen.corner-a", ""));
+        BlockVector second = deserialize(getConfig().getString("screen.corner-b", ""));
+        BlockFace facing = parseFace(getConfig().getString("screen.facing", "NORTH"));
+        String worldName = getConfig().getString("screen.world", "");
+        if (first == null || second == null || facing == null || Bukkit.getWorld(worldName) == null) {
+            getLogger().warning(messages.plain("logs.saved-screen-invalid"));
+            return;
+        }
+        ScreenDefinition migrated = new ScreenDefinition(
+                "main",
+                defaultStreamUrl(),
+                getConfig().getDouble("stream.fps", 8),
+                getConfig().getDouble("screen.viewer-distance", 64),
+                worldName,
+                first,
+                ScreenPolicy.width(first, second, facing),
+                ScreenPolicy.height(first, second),
+                facing,
+                getConfig().getBoolean("screen.auto-start", true)
+        );
+        if (!isScreenAllowed(migrated)) {
+            getLogger().warning(messages.plain("logs.saved-screen-too-large"));
+            return;
+        }
+        persist(migrated);
+        getConfig().set("migration.single-screen-completed", true);
+        getConfig().set("screen.configured", false);
+        saveConfig();
+        getLogger().info(messages.plain("logs.legacy-migrated"));
+    }
+
+    private void refreshViewers() {
+        for (ManagedScreen screen : screens.values()) {
+            screen.refreshViewers();
+        }
+    }
+
+    private void startEnabledSources() {
+        for (SharedStreamSource source : sources.values()) {
+            if (source.hasEnabledScreens()) {
+                source.start();
+            }
+        }
+    }
+
+    private void requestStopAllSources() {
+        for (SharedStreamSource source : sources.values()) {
+            source.requestStop();
+        }
+    }
+
+    private boolean stopAllSources() {
+        boolean stopped = true;
+        for (SharedStreamSource source : new ArrayList<>(sources.values())) {
+            stopped &= source.stop();
+        }
+        return stopped;
+    }
+
+    private void destroyScreens() {
+        for (ManagedScreen screen : new ArrayList<>(screens.values())) {
+            screen.destroy();
+        }
+        screens.clear();
+    }
+
+    private void finishGeneratedStreamReload() {
+        if (sources.values().stream().anyMatch(source -> !source.isTerminated())) {
+            return;
+        }
+        cancelPendingStreamRestart();
+        stopRenderExecutor();
+        destroyScreens();
+        sources.clear();
+        loadScreens();
+        startRenderExecutor();
+        refreshViewers();
+        startEnabledSources();
     }
 
     private void cancelPendingStreamRestart() {
@@ -400,186 +670,21 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    DebugSnapshot debugSnapshot() {
-        IMapDisplay currentDisplay = display;
-        RtmpStreamWorker worker = streamWorker;
-        int mapWidth = currentDisplay == null ? 0 : currentDisplay.width();
-        int mapHeight = currentDisplay == null ? 0 : currentDisplay.height();
-        int pixelWidth = currentDisplay == null ? 0 : currentDisplay.pixelWidth();
-        int pixelHeight = currentDisplay == null ? 0 : currentDisplay.pixelHeight();
-        long rendered = renderedFrames.get();
-
-        return new DebugSnapshot(
-                worker == null ? "stopped" : worker.state(),
-                worker == null ? "none" : worker.lastError(),
-                worker == null ? 0 : worker.sourceWidth(),
-                worker == null ? 0 : worker.sourceHeight(),
-                worker == null ? 0 : worker.reconnects(),
-                worker == null ? 0 : worker.lastFrameAgeMillis(),
-                mapWidth,
-                mapHeight,
-                pixelWidth,
-                pixelHeight,
-                receiverSnapshot.length,
-                receivedFrames.get(),
-                rendered,
-                replacedFrames.get(),
-                pendingFrame.get() != null,
-                lastRenderNanos.get(),
-                rendered == 0 ? 0 : totalRenderNanos.get() / rendered,
-                estimatedImageBufferBytes(),
-                effectiveFps(),
-                lastRenderError
-        );
-    }
-
-    void renderFrame(BufferedImage image) {
-        receivedFrames.incrementAndGet();
-        BufferedImage old = pendingFrame.getAndSet(image);
-        if (old != null) {
-            replacedFrames.incrementAndGet();
-            old.flush();
-        }
-    }
-
-    private void createDisplayInternal(World world, BlockVector a, BlockVector b, BlockFace facing) {
-        synchronized (renderLock) {
-            displayWorld = world;
-            display = mapEngine.displayProvider().createBasic(a, b, facing);
-            display.glowing(getConfig().getBoolean("screen.glowing-frames", false));
-            drawing = mapEngine.pipeline().createDrawingSpace(display);
-            drawing.ctx().buffering(false);
-            drawing.ctx().bundling(false);
-            drawing.ctx().converter(getConfig().getBoolean("screen.dithering", false)
-                    ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
-            previousFrame = null;
-        }
-        receivedFrames.set(0);
-        renderedFrames.set(0);
-        replacedFrames.set(0);
-        totalRenderNanos.set(0);
-        lastRenderNanos.set(0);
-        lastRenderError = "none";
-    }
-
-    private void loadDisplay() {
-        if (!getConfig().getBoolean("screen.configured", false)) {
-            return;
-        }
-
-        String worldName = getConfig().getString("screen.world", "");
-        World world = Bukkit.getWorld(worldName);
-        BlockVector a = deserialize(getConfig().getString("screen.corner-a", ""));
-        BlockVector b = deserialize(getConfig().getString("screen.corner-b", ""));
-        BlockFace facing;
-        try {
-            facing = BlockFace.valueOf(getConfig().getString("screen.facing", "NORTH"));
-        } catch (IllegalArgumentException exception) {
-            facing = null;
-        }
-
-        if (world == null || a == null || b == null || facing == null) {
-            getLogger().warning(messages.plain("logs.saved-screen-invalid"));
-            return;
-        }
-        if (!isScreenSizeAllowed(a, b, facing)) {
-            getLogger().warning(messages.plain("logs.saved-screen-too-large"));
-            return;
-        }
-
-        createDisplayInternal(world, a, b, facing);
-        renderOfflineFrame(messages.plain("screen.waiting"));
-    }
-
-    void showOfflineFrameKey(String key) {
-        renderOfflineFrame(messages.plain(key));
-    }
-
-    private void refreshViewers() {
-        IMapDisplay currentDisplay = display;
-        World currentWorld = displayWorld;
-        IDrawingSpace currentDrawing = drawing;
-        if (currentDisplay == null || currentWorld == null || currentDrawing == null) {
-            return;
-        }
-
-        double maxDistance = Math.max(8, getConfig().getDouble("screen.viewer-distance", 64));
-        double maxDistanceSquared = maxDistance * maxDistance;
-        double centerX = (currentDisplay.box().getMinX() + currentDisplay.box().getMaxX()) / 2.0;
-        double centerY = (currentDisplay.box().getMinY() + currentDisplay.box().getMaxY()) / 2.0;
-        double centerZ = (currentDisplay.box().getMinZ() + currentDisplay.box().getMaxZ()) / 2.0;
-
-        Set<UUID> shouldSee = new HashSet<>();
-        List<Player> receivers = new ArrayList<>();
-        boolean addedViewer = false;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld() != currentWorld) {
-                continue;
-            }
-            double dx = player.getLocation().getX() - centerX;
-            double dy = player.getLocation().getY() - centerY;
-            double dz = player.getLocation().getZ() - centerZ;
-            if (dx * dx + dy * dy + dz * dz <= maxDistanceSquared) {
-                shouldSee.add(player.getUniqueId());
-                receivers.add(player);
-                if (spawnedViewers.add(player.getUniqueId())) {
-                    addedViewer = true;
-                    currentDisplay.spawn(player);
-                }
-            }
-        }
-
-        Set<UUID> remove = new HashSet<>(spawnedViewers);
-        remove.removeAll(shouldSee);
-        for (UUID uuid : remove) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                currentDisplay.despawn(player);
-            }
-            spawnedViewers.remove(uuid);
-        }
-
-        receiverSnapshot = receivers.toArray(Player[]::new);
-        if (addedViewer) {
-            forceFullFrame.set(true);
-        }
-    }
-
-    private void renderOfflineFrame(String message) {
-        if (display == null) {
-            return;
-        }
-        int width = Math.min(display.pixelWidth(), 896);
-        int height = Math.min(display.pixelHeight(), 512);
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = image.createGraphics();
-        try {
-            graphics.setColor(new Color(10, 18, 14));
-            graphics.fillRect(0, 0, width, height);
-            graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            graphics.setColor(new Color(44, 212, 112));
-            graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, Math.max(24, height / 10)));
-            drawCentered(graphics, messages.plain("screen.title"), width, height / 2 - 20);
-            graphics.setColor(Color.LIGHT_GRAY);
-            graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, Math.max(14, height / 20)));
-            drawCentered(graphics, message, width, height / 2 + 35);
-        } finally {
-            graphics.dispose();
-        }
-        renderFrame(image);
-    }
-
     private void startRenderExecutor() {
-        double fps = effectiveFps();
-        long periodMillis = Math.max(50, Math.round(1000.0 / fps));
+        if (renderExecutor != null) {
+            return;
+        }
         renderExecutor = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable, "LuigiScreen-MapEngine");
             thread.setDaemon(true);
             return thread;
         });
-        renderExecutor.scheduleWithFixedDelay(this::flushPendingFrame,
-                0, periodMillis, TimeUnit.MILLISECONDS);
+        renderExecutor.scheduleWithFixedDelay(() -> {
+            long now = System.nanoTime();
+            for (ManagedScreen screen : screens.values()) {
+                screen.flushPendingFrame(now);
+            }
+        }, 0, 50, TimeUnit.MILLISECONDS);
     }
 
     private void stopRenderExecutor() {
@@ -599,125 +704,32 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    private void flushPendingFrame() {
-        BufferedImage frame = pendingFrame.getAndSet(null);
-        boolean fullFrame = forceFullFrame.getAndSet(false);
-        if (frame == null && !fullFrame) {
-            return;
-        }
-
-        long renderStarted = System.nanoTime();
-        boolean renderCompleted = false;
-        try {
-            synchronized (renderLock) {
-                IDrawingSpace currentDrawing = drawing;
-                if (currentDrawing == null) {
-                    return;
-                }
-
-                currentDrawing.ctx().receivers(Arrays.asList(receiverSnapshot));
-                if (frame != null) {
-                    scaleIntoBuffer(frame, currentDrawing.buffer());
-                }
-
-                int maxDeltaMaps = Math.max(0,
-                        getConfig().getInt("performance.delta-updates-max-maps", 256));
-                IMapDisplay currentDisplay = display;
-                boolean useDelta = currentDisplay != null
-                        && (long) currentDisplay.width() * currentDisplay.height() <= maxDeltaMaps;
-                currentDrawing.ctx().previousBuffer(fullFrame || !useDelta ? null : previousFrame);
-                currentDrawing.flush();
-                previousFrame = useDelta ? currentDrawing.buffer().copy() : null;
-                renderedFrames.incrementAndGet();
-                lastRenderError = "none";
-                renderCompleted = true;
-            }
-        } catch (Throwable throwable) {
-            lastRenderError = throwable.getClass().getSimpleName();
-            getLogger().severe(messages.plain(
-                    "logs.render-failed", "error", StreamUrlSanitizer.maskError(throwable)));
-        } finally {
-            if (renderCompleted) {
-                long elapsed = System.nanoTime() - renderStarted;
-                lastRenderNanos.set(elapsed);
-                totalRenderNanos.addAndGet(elapsed);
-            }
-            if (frame != null) {
-                frame.flush();
-            }
-        }
+    private boolean isScreenAllowed(ScreenDefinition definition) {
+        return definition.location() != null
+                && definition.facing() != null
+                && ScreenPolicy.isSizeAllowed(
+                definition.location(),
+                definition.secondCorner(),
+                definition.facing(),
+                maxScreenWidth(),
+                maxScreenHeight(),
+                maxTotalMaps());
     }
 
-    private long estimatedImageBufferBytes() {
-        long bytes = 0;
-        IMapDisplay currentDisplay = display;
-        if (currentDisplay != null) {
-            long displayBytes = (long) currentDisplay.pixelWidth() * currentDisplay.pixelHeight()
-                    * Integer.BYTES;
-            bytes += displayBytes;
-            synchronized (renderLock) {
-                if (previousFrame != null) {
-                    bytes += displayBytes;
-                }
-            }
-        }
-
-        BufferedImage queued = pendingFrame.get();
-        if (queued != null) {
-            bytes += (long) queued.getWidth() * queued.getHeight() * Integer.BYTES;
-        }
-        return bytes;
+    private String defaultStreamUrl() {
+        return getConfig().getString(
+                "stream.url", "rtmp://127.0.0.1:55556/screen").trim();
     }
 
-    private static void scaleIntoBuffer(BufferedImage source, FullSpacedColorBuffer target) {
-        int width = target.width();
-        int height = target.height();
-        int[] masks = {0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000};
-        DataBufferInt dataBuffer = new DataBufferInt(target.buffer(), target.size());
-        WritableRaster raster = WritableRaster.createPackedRaster(
-                dataBuffer, width, height, width, masks, null);
-        DirectColorModel colorModel = new DirectColorModel(
-                ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                32, masks[0], masks[1], masks[2], masks[3],
-                false, DataBuffer.TYPE_INT);
-        BufferedImage output = new BufferedImage(colorModel, raster, false, null);
-
-        Graphics2D graphics = output.createGraphics();
-        try {
-            graphics.setColor(Color.BLACK);
-            graphics.fillRect(0, 0, width, height);
-            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_SPEED);
-
-            double scale = Math.min((double) width / source.getWidth(),
-                    (double) height / source.getHeight());
-            int scaledWidth = Math.max(1, (int) Math.round(source.getWidth() * scale));
-            int scaledHeight = Math.max(1, (int) Math.round(source.getHeight() * scale));
-            int x = (width - scaledWidth) / 2;
-            int y = (height - scaledHeight) / 2;
-            graphics.drawImage(source, x, y, scaledWidth, scaledHeight, null);
-        } finally {
-            graphics.dispose();
-        }
-    }
-
-    private static void drawCentered(Graphics2D graphics, String text, int width, int y) {
-        int x = (width - graphics.getFontMetrics().stringWidth(text)) / 2;
-        graphics.drawString(text, x, y);
-    }
-
-    private boolean isScreenSizeAllowed(BlockVector a, BlockVector b, BlockFace facing) {
-        return ScreenPolicy.isSizeAllowed(
-                a, b, facing, maxScreenWidth(), maxScreenHeight(), maxTotalMaps());
+    private static String sourceKey(String url) {
+        return ScreenSourcePolicy.key(url);
     }
 
     private void configureFfmpegLogging() {
         FFmpegLogCallback.set();
         String configured = getConfig().getString("logging.ffmpeg-level", "quiet");
         String level = configured == null ? "quiet"
-                : configured.trim().toLowerCase(java.util.Locale.ROOT);
+                : configured.trim().toLowerCase(Locale.ROOT);
         int nativeLevel = switch (level) {
             case "error" -> AV_LOG_ERROR;
             case "warning", "warn" -> AV_LOG_WARNING;
@@ -735,17 +747,23 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
-        spawnedViewers.remove(event.getPlayer().getUniqueId());
+        removeViewer(event.getPlayer().getUniqueId());
         Bukkit.getScheduler().runTaskLater(this, this::refreshViewers, 5L);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        spawnedViewers.remove(event.getPlayer().getUniqueId());
+        removeViewer(event.getPlayer().getUniqueId());
         if (debugBossBars != null) {
             debugBossBars.remove(event.getPlayer());
         }
         Bukkit.getScheduler().runTask(this, this::refreshViewers);
+    }
+
+    private void removeViewer(UUID playerId) {
+        for (ManagedScreen screen : screens.values()) {
+            screen.removeViewer(playerId);
+        }
     }
 
     private static String serialize(BlockVector vector) {
@@ -753,17 +771,25 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private static BlockVector deserialize(String value) {
-        String[] parts = value.split(",");
+        String[] parts = value == null ? new String[0] : value.split(",");
         if (parts.length != 3) {
             return null;
         }
         try {
             return new BlockVector(
-                    Integer.parseInt(parts[0]),
-                    Integer.parseInt(parts[1]),
-                    Integer.parseInt(parts[2])
+                    Integer.parseInt(parts[0].trim()),
+                    Integer.parseInt(parts[1].trim()),
+                    Integer.parseInt(parts[2].trim())
             );
         } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private static BlockFace parseFace(String value) {
+        try {
+            return BlockFace.valueOf(value == null ? "" : value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
             return null;
         }
     }

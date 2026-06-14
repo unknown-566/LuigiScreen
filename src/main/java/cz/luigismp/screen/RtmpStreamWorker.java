@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicReference;
 final class RtmpStreamWorker {
 
     private final LuigiScreenPlugin plugin;
+    private final SharedStreamSource source;
     private final String streamUrl;
-    private final double targetFps;
     private final int reconnectDelaySeconds;
     private final int reconnectMaxDelaySeconds;
     private final AtomicBoolean running = new AtomicBoolean();
@@ -32,11 +32,11 @@ final class RtmpStreamWorker {
 
     private ExecutorService executor;
 
-    RtmpStreamWorker(LuigiScreenPlugin plugin, String streamUrl, double targetFps,
+    RtmpStreamWorker(LuigiScreenPlugin plugin, SharedStreamSource source, String streamUrl,
                      int reconnectDelaySeconds, int reconnectMaxDelaySeconds) {
         this.plugin = plugin;
+        this.source = source;
         this.streamUrl = streamUrl;
-        this.targetFps = Math.max(0.1, Math.min(20, targetFps));
         this.reconnectDelaySeconds = Math.max(1, reconnectDelaySeconds);
         this.reconnectMaxDelaySeconds = Math.max(this.reconnectDelaySeconds, reconnectMaxDelaySeconds);
     }
@@ -48,7 +48,8 @@ final class RtmpStreamWorker {
         terminated.set(false);
 
         executor = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "LuigiScreen-RTMP");
+            Thread thread = new Thread(runnable,
+                    "LuigiScreen-RTMP-" + Integer.toUnsignedString(streamUrl.hashCode(), 36));
             thread.setDaemon(true);
             return thread;
         });
@@ -134,7 +135,7 @@ final class RtmpStreamWorker {
         try {
             int retryDelay = reconnectDelaySeconds;
             while (running.get()) {
-                if (!plugin.shouldRenderVideo()) {
+                if (!source.shouldDecode()) {
                     state.set("paused (no viewers)");
                     lastError.set("none");
                     retryDelay = reconnectDelaySeconds;
@@ -145,7 +146,7 @@ final class RtmpStreamWorker {
                 }
 
                 try {
-                    plugin.showOfflineFrameKey("screen.connecting");
+                    source.showFrame("screen.connecting");
                     boolean paused = receiveStream();
                     retryDelay = reconnectDelaySeconds;
                     if (paused) {
@@ -155,7 +156,7 @@ final class RtmpStreamWorker {
                     if (running.get()) {
                         state.set("waiting for stream");
                         lastError.set(compactError(exception));
-                        plugin.showOfflineFrameKey("screen.offline");
+                        source.showFrame("screen.offline");
                     }
                 }
 
@@ -198,11 +199,10 @@ final class RtmpStreamWorker {
                     "width", grabber.getImageWidth(),
                     "height", grabber.getImageHeight()));
 
-            long frameInterval = (long) (TimeUnit.SECONDS.toNanos(1) / targetFps);
             long nextRender = System.nanoTime();
 
             while (running.get()) {
-                if (!plugin.shouldRenderVideo()) {
+                if (!source.shouldDecode()) {
                     state.set("paused (no viewers)");
                     lastError.set("none");
                     return true;
@@ -218,13 +218,16 @@ final class RtmpStreamWorker {
                 lastFrameAt.set(System.currentTimeMillis());
 
                 long now = System.nanoTime();
+                long frameInterval = (long) (TimeUnit.SECONDS.toNanos(1)
+                        / Math.max(0.1, Math.min(20, source.targetFps())));
+                nextRender = Math.min(nextRender, now + frameInterval);
                 if (now < nextRender) {
                     continue;
                 }
                 nextRender = now + frameInterval;
                 BufferedImage source = converter.convert(frame);
                 if (source != null) {
-                    plugin.renderFrame(copyFrame(source));
+                    this.source.publish(copyFrame(source));
                 }
             }
         }

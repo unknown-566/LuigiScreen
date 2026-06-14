@@ -20,7 +20,10 @@ record DebugSnapshot(
         long averageRenderNanos,
         long estimatedImageBufferBytes,
         double effectiveFps,
-        String renderError
+        String renderError,
+        int screenCount,
+        int enabledScreenCount,
+        int sourceCount
 ) {
     int mapCount() {
         return mapWidth * mapHeight;
