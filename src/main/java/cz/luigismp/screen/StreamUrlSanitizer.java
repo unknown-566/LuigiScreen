@@ -23,4 +23,12 @@ public final class StreamUrlSanitizer {
         masked = SENSITIVE_QUERY.matcher(masked).replaceAll("$1***");
         return PATH_STREAM_KEY.matcher(masked).replaceAll("$1***");
     }
+
+    static String maskError(Throwable error) {
+        if (error == null) {
+            return "unknown error";
+        }
+        String message = mask(error.getMessage());
+        return message.isBlank() ? error.getClass().getSimpleName() : message;
+    }
 }

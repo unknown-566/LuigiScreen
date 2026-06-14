@@ -275,12 +275,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,223,854 bytes
+**File size:** 55,224,362 bytes
 
 **SHA-256:**
 
 ```text
-6E5FAD8E6572FDFFA68B077B65E7163A6F8CE06EBFADAD6E9728DDA78A9FBD1A
+4B07AF4B50DCC03BEF990E01D51D3CD7686925E323E49C989A3AB27AECEA3D21
 ```
 
 ## File dependency
@@ -323,6 +323,7 @@ This is the first public CurseForge alpha release of LuigiScreen Free.
 - Czech and English localization
 - Performance boss bar and 15-line debug sidebar
 - Masked RTMP credentials
+- 26 automated tests covering URL masking, screen geometry, FPS limits and configuration validation
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ### Requirements

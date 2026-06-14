@@ -130,15 +130,15 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     int maxScreenWidth() {
-        return Math.max(1, Math.min(50, getConfig().getInt("screen.max-width", 10)));
+        return ScreenPolicy.maxDimension(getConfig().getInt("screen.max-width", 10));
     }
 
     int maxScreenHeight() {
-        return Math.max(1, Math.min(50, getConfig().getInt("screen.max-height", 6)));
+        return ScreenPolicy.maxDimension(getConfig().getInt("screen.max-height", 6));
     }
 
     int maxTotalMaps() {
-        return Math.max(1, Math.min(2500, getConfig().getInt("screen.max-total-maps", 60)));
+        return ScreenPolicy.maxTotalMaps(getConfig().getInt("screen.max-total-maps", 60));
     }
 
     int screenPixelWidth() {
@@ -157,18 +157,15 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     double effectiveFps() {
-        double requested = Math.max(0.1, Math.min(20, getConfig().getDouble("stream.fps", 8)));
         IMapDisplay current = display;
-        if (current == null || !getConfig().getBoolean("performance.adaptive-fps", true)) {
-            return requested;
-        }
-
-        long maps = (long) current.width() * current.height();
-        double budget = Math.max(1,
-                getConfig().getDouble("performance.max-map-updates-per-second", 400));
-        double minimum = Math.max(0.1,
-                Math.min(requested, getConfig().getDouble("performance.minimum-fps", 0.2)));
-        return Math.min(requested, Math.max(minimum, budget / maps));
+        return ScreenPolicy.effectiveFps(
+                getConfig().getDouble("stream.fps", 8),
+                getConfig().getBoolean("performance.adaptive-fps", true),
+                current == null ? 0 : current.width(),
+                current == null ? 0 : current.height(),
+                getConfig().getDouble("performance.max-map-updates-per-second", 400),
+                getConfig().getDouble("performance.minimum-fps", 0.2)
+        );
     }
 
     boolean createDisplay(World world, BlockVector a, BlockVector b, BlockFace facing) {
@@ -260,7 +257,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             return true;
         } catch (Exception exception) {
             getLogger().severe(messages.plain(
-                    "logs.reload-failed", "error", exception.getMessage()));
+                    "logs.reload-failed", "error", StreamUrlSanitizer.maskError(exception)));
             if (renderExecutor == null) {
                 startRenderExecutor();
             }
@@ -638,7 +635,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         } catch (Throwable throwable) {
             lastRenderError = throwable.getClass().getSimpleName();
             getLogger().severe(messages.plain(
-                    "logs.render-failed", "error", throwable.getMessage()));
+                    "logs.render-failed", "error", StreamUrlSanitizer.maskError(throwable)));
         } finally {
             if (renderCompleted) {
                 long elapsed = System.nanoTime() - renderStarted;
@@ -712,17 +709,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private boolean isScreenSizeAllowed(BlockVector a, BlockVector b, BlockFace facing) {
-        int width = switch (facing) {
-            case NORTH, SOUTH -> Math.abs(a.getBlockX() - b.getBlockX()) + 1;
-            case EAST, WEST -> Math.abs(a.getBlockZ() - b.getBlockZ()) + 1;
-            default -> 0;
-        };
-        int height = Math.abs(a.getBlockY() - b.getBlockY()) + 1;
-        return width >= 1
-                && height >= 1
-                && width <= maxScreenWidth()
-                && height <= maxScreenHeight()
-                && (long) width * height <= maxTotalMaps();
+        return ScreenPolicy.isSizeAllowed(
+                a, b, facing, maxScreenWidth(), maxScreenHeight(), maxTotalMaps());
     }
 
     private void configureFfmpegLogging() {

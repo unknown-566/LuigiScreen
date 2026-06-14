@@ -130,7 +130,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         }
 
         BlockVector a = target.getLocation().toVector().toBlockVector();
-        BlockVector b = secondCorner(a, face, width, height);
+        BlockVector b = ScreenPolicy.secondCorner(a, face, width, height);
         if (plugin.createDisplay(player.getWorld(), a, b, face)) {
             message(sender, "commands.create-success", "width", width, "height", height);
         } else {
@@ -147,20 +147,6 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         } catch (NumberFormatException ignored) {
             return -1;
         }
-    }
-
-    private static BlockVector secondCorner(BlockVector a, BlockFace face, int width, int height) {
-        BlockVector b = a.clone();
-        b.setY(a.getBlockY() - height + 1);
-
-        switch (face) {
-            case NORTH -> b.setX(a.getBlockX() - width + 1);
-            case SOUTH -> b.setX(a.getBlockX() + width - 1);
-            case EAST -> b.setZ(a.getBlockZ() - width + 1);
-            case WEST -> b.setZ(a.getBlockZ() + width - 1);
-            default -> throw new IllegalArgumentException("Screen must be vertical");
-        }
-        return b;
     }
 
     private void help(CommandSender sender) {

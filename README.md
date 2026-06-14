@@ -85,6 +85,18 @@ mvn clean verify
 
 The shaded plugin JAR is created in `target/`.
 
+## Verification
+
+The current suite contains 26 automated tests covering:
+
+- RTMP URL and error-message sanitization
+- Screen corner calculation for every vertical direction
+- Screen dimensions and total-map validation
+- Configuration limit clamping
+- Adaptive FPS, minimum FPS and maximum FPS limits
+- MediaMTX generation
+- Localization files and debug text formatting
+
 ## Platform limits
 
 The current artifact supports Windows x86_64 and Linux x86_64. It does not

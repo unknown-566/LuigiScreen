@@ -213,12 +213,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.1.0-alpha.7.jar
 ```
 
-**File size:** 55,223,854 bytes
+**File size:** 55,224,362 bytes
 
 **SHA-256:**
 
 ```text
-6E5FAD8E6572FDFFA68B077B65E7163A6F8CE06EBFADAD6E9728DDA78A9FBD1A
+4B07AF4B50DCC03BEF990E01D51D3CD7686925E323E49C989A3AB27AECEA3D21
 ```
 
 **Dependency:**
@@ -245,6 +245,7 @@ This is the first public alpha release.
 - Czech and English localization
 - Performance boss bar and 15-line debug sidebar
 - RTMP credential masking
+- 26 automated tests covering URL masking, screen geometry, FPS limits and configuration validation
 
 ### Platform support
 

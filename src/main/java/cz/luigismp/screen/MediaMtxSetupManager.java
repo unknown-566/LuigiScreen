@@ -248,7 +248,7 @@ final class MediaMtxSetupManager implements Listener {
         } catch (IOException exception) {
             sessions.remove(player.getUniqueId(), session);
             plugin.getLogger().severe(plugin.messages().plain(
-                    "logs.mediamtx-failed", "error", exception.getMessage()));
+                    "logs.mediamtx-failed", "error", StreamUrlSanitizer.maskError(exception)));
             message(player, "mediamtx.failed");
         }
     }

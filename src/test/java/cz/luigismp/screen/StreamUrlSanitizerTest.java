@@ -44,4 +44,14 @@ class StreamUrlSanitizerTest {
         assertEquals("", StreamUrlSanitizer.mask(null));
         assertEquals("", StreamUrlSanitizer.mask("  "));
     }
+
+    @Test
+    void masksUrlsEmbeddedInErrorMessages() {
+        RuntimeException error = new RuntimeException(
+                "Failed to open rtmp://example.com/live/private-key?user=test&pass=secret");
+        assertEquals(
+                "Failed to open rtmp://example.com/live/***?user=test&pass=***",
+                StreamUrlSanitizer.maskError(error)
+        );
+    }
 }
