@@ -266,13 +266,13 @@ as official LuigiScreen releases.
 **Display name:**
 
 ```text
-LuigiScreen 1.1.0-alpha.9
+LuigiScreen 1.1.0-alpha.10
 ```
 
 **File:**
 
 ```text
-LuigiScreen-1.1.0-alpha.9.jar
+LuigiScreen-1.1.0-alpha.10.jar
 ```
 
 **Release type:** Alpha
@@ -286,12 +286,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,249,902 bytes
+**File size:** 55,249,918 bytes
 
 **SHA-256:**
 
 ```text
-AD3CCCAC043C24747CEEA25B04E4A2DA95267566A160403760D7B1078DCF0B25
+BDA8D4DE4C41C0588C872276983A621A1111EBAA3D7B4C25277604BF407643A2
 ```
 
 ## File dependency
@@ -318,16 +318,13 @@ links.
 Paste this into the file changelog:
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.9
+## LuigiScreen 1.1.0-alpha.10
 
 ### Features
 
-- Granular permissions for every `/screen` subcommand
-- Optional visibility protection for individual screens
-- Dynamic `luigiscreen.see.<screen-name>` permissions
-- `luigiscreen.see.*` wildcard access
-- `/screen set <name> permission <true|false>`
-- Public screens by default through `permission-required: false`
+- Offline, connecting, waiting and stopped screens now display `LuigiScreen`
+- Added the customizable `screen.offline-title` localization key
+- Existing language files receive the new title through the bundled fallback
 - 37 automated tests
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 

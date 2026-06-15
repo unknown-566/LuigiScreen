@@ -60,6 +60,7 @@ status:
 
 screen:
   title: "LuigiSMP"
+  offline-title: "LuigiScreen"
   connecting: "Connecting..."
   stopped: "Stream stopped"
   waiting: "Waiting for stream"

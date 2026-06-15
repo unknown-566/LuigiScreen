@@ -219,7 +219,8 @@ final class ManagedScreen {
                     RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             graphics.setColor(new Color(44, 212, 112));
             graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, Math.max(24, height / 10)));
-            drawCentered(graphics, plugin.messages().plain("screen.title"), width, height / 2 - 20);
+            drawCentered(graphics, plugin.messages().plain("screen.offline-title"),
+                    width, height / 2 - 20);
             graphics.setColor(Color.LIGHT_GRAY);
             graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, Math.max(14, height / 20)));
             drawCentered(graphics, message, width, height / 2 + 35);

@@ -208,9 +208,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.9`
+**Version number:** `1.1.0-alpha.10`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.9`
+**Version title:** `LuigiScreen 1.1.0-alpha.10`
 
 **Release channel:** Alpha
 
@@ -223,15 +223,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.9.jar
+LuigiScreen-1.1.0-alpha.10.jar
 ```
 
-**File size:** 55,249,902 bytes
+**File size:** 55,249,918 bytes
 
 **SHA-256:**
 
 ```text
-AD3CCCAC043C24747CEEA25B04E4A2DA95267566A160403760D7B1078DCF0B25
+BDA8D4DE4C41C0588C872276983A621A1111EBAA3D7B4C25277604BF407643A2
 ```
 
 **Dependency:**
@@ -241,17 +241,13 @@ AD3CCCAC043C24747CEEA25B04E4A2DA95267566A160403760D7B1078DCF0B25
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.9
+## LuigiScreen 1.1.0-alpha.10
 
 ### Highlights
 
-- Granular permissions for every `/screen` subcommand
-- `luigiscreen.admin` remains the operator-level parent permission
-- Optional visibility protection for individual screens
-- Dynamic `luigiscreen.see.<screen-name>` permissions
-- `luigiscreen.see.*` wildcard access
-- `/screen set <name> permission <true|false>`
-- Public screens by default through `permission-required: false`
+- Offline, connecting, waiting and stopped screens now display `LuigiScreen`
+- Added the customizable `screen.offline-title` localization key
+- Existing language files receive the new title through the bundled fallback
 - 37 automated tests
 
 ### Platform support
@@ -325,7 +321,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.9` uploaded as Alpha
+- [ ] `1.1.0-alpha.10` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

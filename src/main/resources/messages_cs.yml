@@ -60,6 +60,7 @@ status:
 
 screen:
   title: "LuigiSMP"
+  offline-title: "LuigiScreen"
   connecting: "Připojování..."
   stopped: "Stream zastaven"
   waiting: "Čekám na stream"
