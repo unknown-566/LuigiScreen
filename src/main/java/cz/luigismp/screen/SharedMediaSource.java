@@ -5,20 +5,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-final class SharedStreamSource {
+final class SharedMediaSource {
 
     private final LuigiScreenPlugin plugin;
-    private final String url;
+    private final ScreenSource source;
     private final CopyOnWriteArraySet<ManagedScreen> screens = new CopyOnWriteArraySet<>();
-    private volatile RtmpStreamWorker worker;
+    private volatile SourceWorker worker;
 
-    SharedStreamSource(LuigiScreenPlugin plugin, String url) {
+    SharedMediaSource(LuigiScreenPlugin plugin, ScreenSource source) {
         this.plugin = plugin;
-        this.url = url;
+        this.source = source;
     }
 
-    String url() {
-        return url;
+    ScreenSource source() {
+        return source;
     }
 
     void attach(ManagedScreen screen) {
@@ -71,22 +71,29 @@ final class SharedStreamSource {
         if (!hasEnabledScreens()) {
             return false;
         }
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         if (current != null && !current.isTerminated()) {
             return false;
         }
-        worker = new RtmpStreamWorker(
-                plugin,
-                this,
-                url,
-                plugin.getConfig().getInt("stream.reconnect-delay-seconds", 3),
-                plugin.getConfig().getInt("stream.reconnect-max-delay-seconds", 30)
-        );
+        worker = createWorker();
         return worker.start();
     }
 
+    private SourceWorker createWorker() {
+        if (source.type().usesFfmpeg()) {
+            return new FfmpegSourceWorker(
+                    plugin,
+                    this,
+                    source,
+                    plugin.getConfig().getInt("stream.reconnect-delay-seconds", 3),
+                    plugin.getConfig().getInt("stream.reconnect-max-delay-seconds", 30)
+            );
+        }
+        return new ImageSourceWorker(plugin, this, source);
+    }
+
     boolean stop() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         if (current == null) {
             return true;
         }
@@ -98,49 +105,49 @@ final class SharedStreamSource {
     }
 
     void requestStop() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         if (current != null) {
             current.requestStop();
         }
     }
 
     boolean isTerminated() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null || current.isTerminated();
     }
 
     boolean isRunning() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current != null && current.isRunning();
     }
 
     String state() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? "stopped" : current.state();
     }
 
     String lastError() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? "none" : current.lastError();
     }
 
     int sourceWidth() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? 0 : current.sourceWidth();
     }
 
     int sourceHeight() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? 0 : current.sourceHeight();
     }
 
     long reconnects() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? 0 : current.reconnects();
     }
 
     long lastFrameAgeMillis() {
-        RtmpStreamWorker current = worker;
+        SourceWorker current = worker;
         return current == null ? -1 : current.lastFrameAgeMillis();
     }
 

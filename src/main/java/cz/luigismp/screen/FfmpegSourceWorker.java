@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-final class RtmpStreamWorker {
+final class FfmpegSourceWorker implements SourceWorker {
 
     private final LuigiScreenPlugin plugin;
-    private final SharedStreamSource source;
-    private final String streamUrl;
+    private final SharedMediaSource sharedSource;
+    private final ScreenSource source;
     private final int reconnectDelaySeconds;
     private final int reconnectMaxDelaySeconds;
     private final AtomicBoolean running = new AtomicBoolean();
@@ -32,24 +32,27 @@ final class RtmpStreamWorker {
 
     private ExecutorService executor;
 
-    RtmpStreamWorker(LuigiScreenPlugin plugin, SharedStreamSource source, String streamUrl,
-                     int reconnectDelaySeconds, int reconnectMaxDelaySeconds) {
+    FfmpegSourceWorker(LuigiScreenPlugin plugin, SharedMediaSource sharedSource,
+                       ScreenSource source, int reconnectDelaySeconds,
+                       int reconnectMaxDelaySeconds) {
         this.plugin = plugin;
+        this.sharedSource = sharedSource;
         this.source = source;
-        this.streamUrl = streamUrl;
         this.reconnectDelaySeconds = Math.max(1, reconnectDelaySeconds);
-        this.reconnectMaxDelaySeconds = Math.max(this.reconnectDelaySeconds, reconnectMaxDelaySeconds);
+        this.reconnectMaxDelaySeconds =
+                Math.max(this.reconnectDelaySeconds, reconnectMaxDelaySeconds);
     }
 
-    boolean start() {
+    @Override
+    public boolean start() {
         if (!running.compareAndSet(false, true)) {
             return false;
         }
         terminated.set(false);
-
         executor = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable,
-                    "LuigiScreen-RTMP-" + Integer.toUnsignedString(streamUrl.hashCode(), 36));
+                    "LuigiScreen-" + source.type().id() + "-"
+                            + Integer.toUnsignedString(source.key().hashCode(), 36));
             thread.setDaemon(true);
             return thread;
         });
@@ -57,7 +60,8 @@ final class RtmpStreamWorker {
         return true;
     }
 
-    boolean stop() {
+    @Override
+    public boolean stop() {
         requestStop();
         ExecutorService currentExecutor = executor;
         if (currentExecutor == null) {
@@ -72,61 +76,65 @@ final class RtmpStreamWorker {
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
-
         if (!stopped) {
-            plugin.getLogger().severe(
-                    plugin.messages().plain("logs.decoder-stop-failed"));
+            plugin.getLogger().severe(plugin.messages().plain("logs.decoder-stop-failed"));
             state.set("stopping");
             return false;
         }
-
         executor = null;
         state.set("stopped");
         return true;
     }
 
-    void requestStop() {
+    @Override
+    public void requestStop() {
         running.set(false);
         if (!terminated.get()) {
             state.set("stopping");
         }
         ExecutorService currentExecutor = executor;
         if (currentExecutor != null) {
-            // Closing FFmpegFrameGrabber from another thread can crash the JVM.
-            // Interrupt the owner thread and let try-with-resources close it.
             currentExecutor.shutdownNow();
         }
     }
 
-    String state() {
+    @Override
+    public String state() {
         return state.get();
     }
 
-    String lastError() {
+    @Override
+    public String lastError() {
         return lastError.get();
     }
 
-    boolean isRunning() {
+    @Override
+    public boolean isRunning() {
         return running.get();
     }
 
-    boolean isTerminated() {
+    @Override
+    public boolean isTerminated() {
         return terminated.get();
     }
 
-    int sourceWidth() {
+    @Override
+    public int sourceWidth() {
         return sourceWidth.get();
     }
 
-    int sourceHeight() {
+    @Override
+    public int sourceHeight() {
         return sourceHeight.get();
     }
 
-    long reconnects() {
+    @Override
+    public long reconnects() {
         return reconnects.get();
     }
 
-    long lastFrameAgeMillis() {
+    @Override
+    public long lastFrameAgeMillis() {
         long timestamp = lastFrameAt.get();
         return timestamp == 0 ? -1 : Math.max(0, System.currentTimeMillis() - timestamp);
     }
@@ -134,11 +142,13 @@ final class RtmpStreamWorker {
     private void runLoop() {
         try {
             int retryDelay = reconnectDelaySeconds;
+            boolean showConnecting = true;
             while (running.get()) {
-                if (!source.shouldDecode()) {
+                if (!sharedSource.shouldDecode()) {
                     state.set("paused (no viewers)");
                     lastError.set("none");
                     retryDelay = reconnectDelaySeconds;
+                    showConnecting = true;
                     if (!sleepMillis(500)) {
                         break;
                     }
@@ -146,17 +156,25 @@ final class RtmpStreamWorker {
                 }
 
                 try {
-                    source.showFrame("screen.connecting");
-                    boolean paused = receiveStream();
+                    if (showConnecting) {
+                        sharedSource.showFrame("screen.connecting");
+                    }
+                    ReceiveResult result = receive();
                     retryDelay = reconnectDelaySeconds;
-                    if (paused) {
+                    if (result == ReceiveResult.LOOP) {
+                        showConnecting = false;
+                        continue;
+                    }
+                    if (result == ReceiveResult.PAUSED) {
+                        showConnecting = true;
                         continue;
                     }
                 } catch (Exception exception) {
                     if (running.get()) {
-                        state.set("waiting for stream");
+                        showConnecting = true;
+                        state.set("waiting for source");
                         lastError.set(compactError(exception));
-                        source.showFrame("screen.offline");
+                        sharedSource.showFrame("screen.offline");
                     }
                 }
 
@@ -174,69 +192,108 @@ final class RtmpStreamWorker {
         }
     }
 
-    private boolean receiveStream() throws Exception {
+    private ReceiveResult receive() throws Exception {
         state.set("connecting");
         reconnects.incrementAndGet();
-        try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(streamUrl);
+        String input = plugin.resolveSourceInput(source);
+        try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(input);
              Java2DFrameConverter converter = new Java2DFrameConverter()) {
-            grabber.setFormat("flv");
-            grabber.setOption("analyzeduration", "10000000");
-            grabber.setOption("probesize", "10000000");
-            grabber.setOption("rw_timeout", "3000000");
+            configure(grabber);
             grabber.start();
 
             if (grabber.getImageWidth() <= 0 || grabber.getImageHeight() <= 0) {
                 throw new IllegalStateException("video dimensions are missing");
             }
-
             sourceWidth.set(grabber.getImageWidth());
             sourceHeight.set(grabber.getImageHeight());
             state.set("live");
             lastError.set("none");
             plugin.getLogger().info(plugin.messages().plain(
-                    "logs.stream-connected",
-                    "url", StreamUrlSanitizer.mask(streamUrl),
+                    "logs.source-connected",
+                    "type", source.type().id(),
+                    "value", source.displayValue(),
                     "width", grabber.getImageWidth(),
                     "height", grabber.getImageHeight()));
 
-            long nextRender = System.nanoTime();
+            long nextPublish = System.nanoTime();
+            long playbackStarted = 0;
+            long firstTimestamp = -1;
 
             while (running.get()) {
-                if (!source.shouldDecode()) {
+                if (!sharedSource.shouldDecode()) {
                     state.set("paused (no viewers)");
                     lastError.set("none");
-                    return true;
+                    return ReceiveResult.PAUSED;
                 }
 
                 Frame frame = grabber.grabImage();
                 if (frame == null) {
-                    throw new IllegalStateException("stream ended");
+                    if (source.type().loopsAtEnd()) {
+                        return ReceiveResult.LOOP;
+                    }
+                    throw new IllegalStateException("source ended");
                 }
                 if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0) {
                     continue;
                 }
-                lastFrameAt.set(System.currentTimeMillis());
 
+                if (source.type().loopsAtEnd() && frame.timestamp >= 0) {
+                    if (firstTimestamp < 0) {
+                        firstTimestamp = frame.timestamp;
+                        playbackStarted = System.nanoTime();
+                    }
+                    long target = playbackStarted
+                            + Math.max(0, frame.timestamp - firstTimestamp) * 1_000L;
+                    if (!sleepUntil(target)) {
+                        return ReceiveResult.STOPPED;
+                    }
+                }
+
+                lastFrameAt.set(System.currentTimeMillis());
                 long now = System.nanoTime();
-                long frameInterval = (long) (TimeUnit.SECONDS.toNanos(1)
-                        / Math.max(0.1, Math.min(20, source.targetFps())));
-                nextRender = Math.min(nextRender, now + frameInterval);
-                if (now < nextRender) {
+                long interval = (long) (TimeUnit.SECONDS.toNanos(1)
+                        / Math.max(0.1, Math.min(20, sharedSource.targetFps())));
+                if (now < nextPublish) {
                     continue;
                 }
-                nextRender = now + frameInterval;
-                BufferedImage source = converter.convert(frame);
-                if (source != null) {
-                    this.source.publish(copyFrame(source));
+                nextPublish = now + interval;
+                BufferedImage image = converter.convert(frame);
+                if (image != null) {
+                    sharedSource.publish(copyFrame(image));
                 }
+            }
+        }
+        return ReceiveResult.STOPPED;
+    }
+
+    private void configure(FFmpegFrameGrabber grabber) {
+        if (source.type() == SourceType.RTMP) {
+            grabber.setFormat("flv");
+        }
+        if (source.usesRemoteLocation()) {
+            grabber.setOption("analyzeduration", "10000000");
+            grabber.setOption("probesize", "10000000");
+            grabber.setOption("rw_timeout", "5000000");
+        }
+    }
+
+    private boolean sleepUntil(long targetNanos) {
+        while (running.get()) {
+            long remaining = targetNanos - System.nanoTime();
+            if (remaining <= 0) {
+                return true;
+            }
+            if (!sleepMillis(Math.min(
+                    TimeUnit.NANOSECONDS.toMillis(remaining) + 1, 100))) {
+                return false;
             }
         }
         return false;
     }
 
     private static BufferedImage copyFrame(BufferedImage source) {
-        BufferedImage output = new BufferedImage(source.getWidth(), source.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
+        BufferedImage output = new BufferedImage(
+                source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = output.createGraphics();
         try {
             graphics.drawImage(source, 0, 0, null);
@@ -252,19 +309,25 @@ final class RtmpStreamWorker {
             return exception.getClass().getSimpleName();
         }
         if (message.contains("Could not open input")) {
-            return "stream offline";
+            return "source offline";
         }
         message = StreamUrlSanitizer.mask(message);
-        return message.length() > 80 ? message.substring(0, 80) : message;
+        return message.length() > 100 ? message.substring(0, 100) : message;
     }
 
     private boolean sleepMillis(long millis) {
         try {
-            TimeUnit.MILLISECONDS.sleep(millis);
+            TimeUnit.MILLISECONDS.sleep(Math.max(1, millis));
             return true;
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
             return false;
         }
+    }
+
+    private enum ReceiveResult {
+        PAUSED,
+        LOOP,
+        STOPPED
     }
 }

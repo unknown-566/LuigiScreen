@@ -45,7 +45,7 @@ LuigiScreen uses JavaCPP under the Apache License 2.0 option.
 
 ## FFmpeg 7.1.1
 
-- Purpose: RTMP demuxing and H.264 video decoding
+- Purpose: stream, video and GIF demuxing and decoding
 - Bundled: Windows x86_64 and Linux x86_64 native libraries
 - Artifact: Standard JavaCPP Presets FFmpeg artifact without the `-gpl`
   classifier

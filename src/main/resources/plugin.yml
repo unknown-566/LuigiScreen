@@ -4,13 +4,13 @@ main: cz.luigismp.screen.LuigiScreenPlugin
 api-version: '1.21.11'
 depend: [MapEngine]
 authors: [unknown_56]
-description: A server-side Paper/Bukkit plugin for live RTMP map screens.
+description: A server-side Paper/Bukkit plugin for live media map screens.
 
 commands:
   luigiscreen:
     description: Manage LuigiScreen live screens.
     aliases: [screen]
-    usage: /screen <create|clone|list|start|stop|remove|status|set|reload|debug|mediamtx>
+    usage: /screen <create|clone|list|start|stop|remove|status|source|set|reload|debug|mediamtx>
 
 permissions:
   luigiscreen.admin:
@@ -24,6 +24,7 @@ permissions:
       luigiscreen.stop: true
       luigiscreen.remove: true
       luigiscreen.status: true
+      luigiscreen.source: true
       luigiscreen.set: true
       luigiscreen.reload: true
       luigiscreen.debug: true
@@ -49,6 +50,9 @@ permissions:
     default: false
   luigiscreen.status:
     description: Allows viewing screen and stream status.
+    default: false
+  luigiscreen.source:
+    description: Allows viewing and changing screen media sources.
     default: false
   luigiscreen.set:
     description: Allows changing per-screen settings.

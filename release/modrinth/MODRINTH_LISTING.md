@@ -12,7 +12,7 @@ This file is the source of truth for the LuigiScreen Modrinth page.
 
 **Summary:**
 
-> A server-side Paper/Bukkit plugin for live OBS and RTMP video on configurable Minecraft map screens.
+> A server-side Paper/Bukkit plugin for streams, videos, images and GIFs on configurable Minecraft map screens.
 
 **Recommended categories:**
 
@@ -61,32 +61,37 @@ https://modrinth.com/plugin/mapengine
 ## Full description
 
 ````markdown
-# Turn a Minecraft wall into a live screen
+# Turn a Minecraft wall into a media screen
 
-LuigiScreen is a server-side Paper/Bukkit plugin that displays a live RTMP video stream across a configurable wall of Minecraft maps.
+LuigiScreen is a server-side Paper/Bukkit plugin that displays live streams,
+videos, images and GIFs across configurable walls of Minecraft maps.
 
-Use OBS Studio to capture a desktop, game, video, browser or camera. MediaMTX receives the RTMP stream, LuigiScreen decodes its latest frame with FFmpeg, and MapEngine renders it for nearby players.
+Select an RTMP or MJPEG stream, a local video, a local or remote image, or an
+animated GIF. LuigiScreen loads the latest frame and MapEngine renders it for
+nearby players.
 
 No client mod is required. Players join with a normal Minecraft client.
 
 ## Features
 
-- Live RTMP video rendered on Minecraft maps
+- RTMP and MJPEG live streams
+- Looping local videos and GIFs
+- Local and URL images
 - Multiple named screens with independent settings
-- One shared FFmpeg decoder for screens using the same URL
+- One shared loader for screens using the same source type and value
 - Configurable screen dimensions, worlds, locations and orientation
 - Automatic reconnect with exponential backoff
 - Viewer-distance detection
 - Decoder pause while nobody is near the screen
 - Adaptive FPS protection for larger screens
 - Delta map updates to reduce unnecessary traffic
-- Guided MediaMTX configuration for five network situations
+- Optional guided MediaMTX configuration for RTMP
 - Editable Czech and English localization
 - Granular permissions for every management command
 - Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar and debug sidebar
 - Persistent screen configuration across restarts
-- Masked RTMP credentials in commands and plugin logs
+- Masked remote-source credentials in commands and plugin logs
 - Bundled FFmpeg natives for Windows x86_64 and Linux x86_64
 
 ## Requirements
@@ -94,8 +99,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Paper 1.21.11
 - Java 21
 - MapEngine 1.8.12
-- MediaMTX
-- OBS Studio or another RTMP publisher
+- MediaMTX and OBS Studio only when using RTMP
 - Windows x86_64 or Linux x86_64 server
 
 LuigiScreen belongs to the Bukkit plugin ecosystem but currently targets
@@ -103,33 +107,24 @@ Paper APIs. Use Paper 1.21.11, not a plain Spigot or CraftBukkit server.
 
 [MapEngine is a required dependency.](https://modrinth.com/plugin/mapengine)
 
-## How it works
+## Source types
 
 ```text
-OBS or another publisher
-          |
-          | RTMP
-          v
-       MediaMTX
-          |
-          | RTMP
-          v
- LuigiScreen + FFmpeg
-          |
-          v
-       MapEngine
-          |
-          v
- Minecraft map screen
+rtmp       rtmp:// or rtmps:// live stream
+mjpeg      HTTP(S) MJPEG camera stream
+video      looping local video file
+image      local static image
+url-image  remote HTTP(S) image
+gif        looping local or remote GIF
 ```
 
-MediaMTX and OBS do not have to run on the Minecraft server computer. LuigiScreen includes guided setup profiles for:
+Relative local paths use `plugins/LuigiScreen/media/`. Screens using the same
+source type and value share one loader while keeping independent FPS,
+distance, location, dimensions and permissions.
 
-- The same computer
-- A local network
-- A public IP with port forwarding
-- A VPN or TCP tunnel
-- External hosting or a VPS
+For RTMP, MediaMTX and OBS do not have to run on the Minecraft server computer.
+LuigiScreen includes guided setup profiles for the same computer, LAN, public
+IP, VPN and external hosting.
 
 ## Installation
 
@@ -137,31 +132,33 @@ MediaMTX and OBS do not have to run on the Minecraft server computer. LuigiScree
 2. Install MapEngine 1.8.12.
 3. Put the LuigiScreen JAR in `plugins/`.
 4. Start the server.
-5. Choose a MediaMTX setup with `/screen mediamtx <situation>`.
-6. Start MediaMTX and publish the stream from OBS.
-7. Create the screen while looking at the upper-left block of a vertical wall.
+5. Create the screen while looking at the upper-left block of a vertical wall.
+6. Select its source.
 
 Example:
 
 ```text
-/screen mediamtx same-pc
 /screen create main 7 4
+/screen source main video intro.mp4
 /screen start main
 ```
 
-Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.io/luigiscreen/) before exposing MediaMTX to the internet.
+Use `/screen mediamtx <situation>` only for an RTMP setup. Read the
+[complete step-by-step documentation](https://unknown-56-works.gitbook.io/luigiscreen/)
+before exposing MediaMTX to the internet.
 
 ## Commands
 
 | Command | Description |
 | --- | --- |
 | `/screen create <name> [width] [height]` | Create a named screen on the wall you are looking at |
-| `/screen clone <source> <new-name>` | Clone a screen and share its source URL |
-| `/screen list` | List screens and masked source URLs |
+| `/screen clone <source> <new-name>` | Clone a screen and share its typed source |
+| `/screen list` | List screens and safe source values |
 | `/screen start <name\|all>` | Enable one or every screen |
 | `/screen stop <name\|all>` | Disable screens without deleting them |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
+| `/screen source <name> <type> <value>` | Switch RTMP, MJPEG, video, image, URL image or GIF |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
 | `/screen reload` | Reload configuration without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
@@ -179,7 +176,8 @@ The default public configuration limits each screen to `10x6` maps and 60 maps. 
 
 Large screens can still consume significant CPU, memory and network bandwidth. Increase the limits only after testing `/screen debug` with real players.
 
-Screens with an identical RTMP URL share one decoder and one decoded image.
+Screens with an identical normalized source type and value share one loader
+and one decoded image.
 MapEngine scaling, rendering and packets still run independently for every
 screen because their sizes, FPS and viewers may differ.
 
@@ -188,8 +186,9 @@ screen because their sizes, FPS and viewers may differ.
 - Video only; Minecraft does not receive stream audio
 - No ARM or macOS native libraries
 - No Folia support
-- MediaMTX is configured by LuigiScreen but runs as a separate application
-- OBS or another publisher must stay online for live capture
+- MediaMTX and OBS remain separate applications when RTMP is used
+- A publisher must stay online for live RTMP capture
+- URL images are loaded once after a successful request
 
 ## Alpha notice
 
@@ -208,9 +207,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.11`
+**Version number:** `1.1.0-alpha.12`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.11`
+**Version title:** `LuigiScreen 1.1.0-alpha.12`
 
 **Release channel:** Alpha
 
@@ -223,15 +222,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.11.jar
+LuigiScreen-1.1.0-alpha.12.jar
 ```
 
-**File size:** 55,252,755 bytes
+**File size:** 55,270,230 bytes
 
 **SHA-256:**
 
 ```text
-085A090EF2AF27FF93A72F0EA6A034A98983D9672B613436F8FF1E22422D519F
+1CD87280FE1AAEBCCA589191E462964863D9F889098C30C34FA0FCECF41F6EAF
 ```
 
 **Dependency:**
@@ -241,19 +240,19 @@ LuigiScreen-1.1.0-alpha.11.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.11
+## LuigiScreen 1.1.0-alpha.12
 
 ### Highlights
 
-- Fixed `/screen reload` removing MapEngine displays
-- Reload never destroys an existing MapEngine display
-- Screens missing from config are restored; use `/screen remove` to delete them
-- Geometry edits are kept safe until the screen is explicitly removed and recreated
-- URL, FPS, distance, enabled, permission and rendering settings update in place
-- MediaMTX source changes use the same non-destructive screen reconciliation
-- Fixed viewer respawning when the glowing setting changes
-- Corrected the plugin author to `unknown_56`
-- 40 automated tests
+- Added RTMP, MJPEG, local video, local image, URL image and GIF sources
+- Added `/screen source <name> <type> <value>`
+- Added safe local media paths under `plugins/LuigiScreen/media/`
+- Added looping video and GIF playback
+- Added shared loading by normalized source type and value
+- Added automatic migration from old RTMP `url:` entries
+- Added `luigiscreen.source`
+- Kept fully non-destructive `/screen reload`
+- 44 automated tests
 
 ### Platform support
 
@@ -267,7 +266,7 @@ LuigiScreen-1.1.0-alpha.11.jar
 
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
-- MediaMTX and an RTMP publisher are separate requirements
+- MediaMTX and a publisher are only required for RTMP
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
 Read the [installation guide](https://unknown-56-works.gitbook.io/luigiscreen/getting-started/installation) before installing.
@@ -288,8 +287,8 @@ Recommended gallery images:
 Recommended image title and caption:
 
 ```text
-Title: Live RTMP screen
-Caption: An OBS video stream rendered live on a 7x4 Minecraft map wall.
+Title: LuigiScreen media wall
+Caption: A video rendered on a configurable 7x4 Minecraft map wall.
 ```
 
 ## Icon guidance
@@ -326,7 +325,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.11` uploaded as Alpha
+- [ ] `1.1.0-alpha.12` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

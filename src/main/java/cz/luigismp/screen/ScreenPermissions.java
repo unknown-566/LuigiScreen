@@ -18,6 +18,7 @@ final class ScreenPermissions {
             Map.entry("stop", "luigiscreen.stop"),
             Map.entry("remove", "luigiscreen.remove"),
             Map.entry("status", "luigiscreen.status"),
+            Map.entry("source", "luigiscreen.source"),
             Map.entry("set", "luigiscreen.set"),
             Map.entry("reload", "luigiscreen.reload"),
             Map.entry("debug", "luigiscreen.debug"),

@@ -17,7 +17,7 @@ project name.
 
 **Summary:**
 
-> A server-side Paper/Bukkit plugin for live OBS and RTMP video on configurable Minecraft map screens.
+> A server-side Paper/Bukkit plugin for streams, videos, images and GIFs on configurable Minecraft map screens.
 
 **Primary category:** Admin Tools
 
@@ -76,37 +76,38 @@ broadcast signal, with no text.
 Paste the content inside this block into the CurseForge description editor.
 
 ````markdown
-# Turn a Minecraft wall into a live video screen
+# Turn a Minecraft wall into a media screen
 
-LuigiScreen is a server-side Paper/Bukkit plugin that renders a live RTMP
-video stream across a configurable wall of Minecraft maps.
+LuigiScreen is a server-side Paper/Bukkit plugin that renders streams, videos,
+images and GIFs across configurable walls of Minecraft maps.
 
-OBS Studio or another RTMP publisher captures a desktop, game, browser, camera
-or video. MediaMTX receives the stream, LuigiScreen decodes the latest video
-frame with FFmpeg, and MapEngine displays it to nearby players.
+Select RTMP, MJPEG, a local video, a local or remote image, or an animated GIF.
+LuigiScreen loads the latest frame and MapEngine displays it to nearby players.
 
 Players do not need to install a client mod.
 
 ## Features
 
-- Live RTMP video rendered on Minecraft map screens
+- RTMP and MJPEG live streams
+- Looping local videos and GIFs
+- Local and URL images
 - Multiple named screens with independent settings
-- One shared FFmpeg decoder for screens using the same URL
+- One shared loader for screens using the same source type and value
 - Configurable screen width, height, world, location and wall orientation
 - Persistent screen configuration across server restarts
-- Automatic RTMP reconnect with exponential backoff
+- Automatic remote-source reconnect with exponential backoff
 - Viewer-distance detection
 - Decoder pause while nobody is near the screen
 - Adaptive FPS protection for larger displays
 - Delta map updates to reduce unnecessary packet traffic
 - Configurable map-update rate limits
-- Guided MediaMTX setup for five common network situations
+- Optional guided MediaMTX setup for RTMP
 - Editable Czech and English localization
 - Granular permissions for every management command
 - Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar
 - Rotating 15-line debug sidebar
-- Masked RTMP credentials in status output and plugin logs
+- Masked remote-source credentials in status output and plugin logs
 - Bundled FFmpeg natives for Windows x86_64 and Linux x86_64
 
 ## Requirements
@@ -114,8 +115,7 @@ Players do not need to install a client mod.
 - Paper 1.21.11
 - Java 21
 - MapEngine 1.8.12
-- MediaMTX
-- OBS Studio or another RTMP publisher
+- MediaMTX and OBS Studio only when using RTMP
 - Windows x86_64 or Linux x86_64 server
 
 LuigiScreen belongs to the Bukkit plugin ecosystem but currently targets
@@ -124,8 +124,8 @@ Paper APIs. Use Paper 1.21.11, not a plain Spigot or CraftBukkit server.
 **MapEngine 1.8.12 is a required server plugin. LuigiScreen will not start
 without it.**
 
-MediaMTX and OBS are separate applications. LuigiScreen configures and reads
-the stream but does not replace either application.
+MediaMTX and OBS are optional separate applications for RTMP. Local media and
+images do not require them.
 
 ## How it works
 
@@ -157,17 +157,14 @@ hosting.
 2. Install MapEngine 1.8.12 in the server's `plugins` folder.
 3. Put the LuigiScreen JAR in the same `plugins` folder.
 4. Start the server.
-5. Run `/screen mediamtx <situation>` to generate a MediaMTX setup.
-6. Start MediaMTX.
-7. Configure OBS to publish to the generated RTMP address.
-8. Look at the upper-left block of a vertical wall.
-9. Create and start the screen.
+5. Look at the upper-left block of a vertical wall.
+6. Create the screen and select its source.
 
 Example for a 7x4 screen:
 
 ```text
-/screen mediamtx same-pc
 /screen create main 7 4
+/screen source main video intro.mp4
 /screen start main
 ```
 
@@ -180,12 +177,13 @@ shutdown.
 | Command | Description |
 | --- | --- |
 | `/screen create <name> [width] [height]` | Create a named screen on the targeted wall |
-| `/screen clone <source> <new-name>` | Clone a screen and share its source URL |
+| `/screen clone <source> <new-name>` | Clone a screen and share its typed source |
 | `/screen list` | List every screen |
 | `/screen start <name\|all>` | Enable one or every screen |
 | `/screen stop <name\|all>` | Disable screens without deleting them |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
+| `/screen source <name> <type> <value>` | Switch RTMP, MJPEG, video, image, URL image or GIF |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
 | `/screen reload` | Reload configuration without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
@@ -213,7 +211,8 @@ The default public configuration limits each screen to `10x6` maps and 60
 maps. Adaptive FPS, viewer pause and map-update limits help protect the
 server and connected clients.
 
-Screens with the same URL share one FFmpeg decoder and decoded image. Each
+Screens with the same normalized source type and value share one loader and
+decoded image. Each
 screen still has its own MapEngine rendering and packet cost.
 
 Large displays can still consume significant CPU, memory and network
@@ -266,13 +265,13 @@ as official LuigiScreen releases.
 **Display name:**
 
 ```text
-LuigiScreen 1.1.0-alpha.11
+LuigiScreen 1.1.0-alpha.12
 ```
 
 **File:**
 
 ```text
-LuigiScreen-1.1.0-alpha.11.jar
+LuigiScreen-1.1.0-alpha.12.jar
 ```
 
 **Release type:** Alpha
@@ -286,12 +285,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,252,755 bytes
+**File size:** 55,270,230 bytes
 
 **SHA-256:**
 
 ```text
-085A090EF2AF27FF93A72F0EA6A034A98983D9672B613436F8FF1E22422D519F
+1CD87280FE1AAEBCCA589191E462964863D9F889098C30C34FA0FCECF41F6EAF
 ```
 
 ## File dependency
@@ -318,19 +317,19 @@ links.
 Paste this into the file changelog:
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.11
+## LuigiScreen 1.1.0-alpha.12
 
 ### Features
 
-- Fixed `/screen reload` removing MapEngine displays
-- Reload never destroys an existing MapEngine display
-- Screens missing from config are restored; use `/screen remove` to delete them
-- Geometry edits are kept safe until the screen is explicitly removed and recreated
-- URL, FPS, distance, enabled, permission and rendering settings update in place
-- MediaMTX source changes use the same non-destructive screen reconciliation
-- Fixed viewer respawning when the glowing setting changes
-- Corrected the plugin author to `unknown_56`
-- 40 automated tests
+- Added RTMP, MJPEG, local video, local image, URL image and GIF sources
+- Added `/screen source <name> <type> <value>`
+- Added safe local media paths under `plugins/LuigiScreen/media/`
+- Added looping video and GIF playback
+- Added shared loading by normalized source type and value
+- Added automatic migration from old RTMP `url:` entries
+- Added `luigiscreen.source`
+- Kept fully non-destructive `/screen reload`
+- 44 automated tests
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ### Requirements
@@ -338,14 +337,13 @@ Paste this into the file changelog:
 - Paper 1.21.11
 - Java 21
 - MapEngine 1.8.12
-- MediaMTX
-- OBS Studio or another RTMP publisher
+- MediaMTX and OBS Studio only for RTMP
 
 ### Known limitations
 
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
-- MediaMTX and an RTMP publisher run separately
+- MediaMTX and a publisher run separately when RTMP is used
 - Every screen still adds MapEngine render and packet cost
 
 This is alpha software. Back up the server and test it away from production.

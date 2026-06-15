@@ -21,7 +21,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "create", "clone", "list", "start", "stop", "remove",
-            "status", "set", "reload", "debug", "mediamtx");
+            "status", "source", "set", "reload", "debug", "mediamtx");
     private static final List<String> SET_PROPERTIES =
             List.of("url", "fps", "distance", "enabled", "permission");
     private final LuigiScreenPlugin plugin;
@@ -54,6 +54,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             case "stop" -> stop(sender, args);
             case "remove" -> remove(sender, args);
             case "status" -> status(sender, args);
+            case "source" -> source(sender, args);
             case "set" -> set(sender, args);
             case "debug" -> debug(sender);
             case "mediamtx" -> mediaMtx(sender, args);
@@ -155,7 +156,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
                     "distance", format(definition.distance()),
                     "permission_required", definition.permissionRequired(),
                     "view_permission", ScreenPermissions.viewNode(definition.id()),
-                    "url", StreamUrlSanitizer.mask(definition.url()));
+                    "source_type", definition.source().type().id(),
+                    "source_value", definition.source().displayValue());
         }
     }
 
@@ -219,6 +221,57 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         }
         sender.sendMessage(plugin.messages().component("prefix")
                 .append(plugin.status(args[1])));
+    }
+
+    private void source(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            message(sender, "commands.source-usage");
+            return;
+        }
+        String id = ScreenDefinition.normalizeId(args[1]);
+        ScreenDefinition definition = plugin.screenDefinition(id);
+        if (definition == null) {
+            message(sender, "commands.screen-missing", "screen", id);
+            return;
+        }
+        if (args.length == 2) {
+            message(sender, "commands.source-current",
+                    "screen", id,
+                    "type", definition.source().type().id(),
+                    "value", definition.source().displayValue());
+            return;
+        }
+        if (args[2].equalsIgnoreCase("types")) {
+            message(sender, "commands.source-types",
+                    "types", String.join(", ", SourceType.commandNames()));
+            return;
+        }
+        if (args.length < 4) {
+            message(sender, "commands.source-usage");
+            message(sender, "commands.source-folder",
+                    "folder", plugin.mediaDirectoryDisplay());
+            return;
+        }
+        String value = String.join(" ", List.of(args).subList(3, args.length));
+        ScreenSource source = ScreenSource.parse(args[2], value);
+        if (source == null || !source.isValid()) {
+            message(sender, "commands.source-invalid");
+            message(sender, "commands.source-folder",
+                    "folder", plugin.mediaDirectoryDisplay());
+            return;
+        }
+        if (plugin.setScreenSource(id, source)) {
+            message(sender, "commands.source-success",
+                    "screen", id,
+                    "type", source.type().id(),
+                    "value", source.displayValue());
+        } else {
+            message(sender, "commands.source-failed", "screen", id);
+            if (!source.usesRemoteLocation()) {
+                message(sender, "commands.source-folder",
+                        "folder", plugin.mediaDirectoryDisplay());
+            }
+        }
     }
 
     private void set(CommandSender sender, String[] args) {
@@ -333,6 +386,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         message(sender, "commands.help-create");
         message(sender, "commands.help-clone");
         message(sender, "commands.help-control");
+        message(sender, "commands.help-source");
         message(sender, "commands.help-set");
         message(sender, "commands.help-debug");
         message(sender, "commands.help-mediamtx",
@@ -410,12 +464,18 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             return matching(MediaMtxSetupManager.situationNames(), args[1]);
         }
         if (args.length == 2 && List.of(
-                "clone", "start", "stop", "remove", "status", "set").contains(subcommand)) {
+                "clone", "start", "stop", "remove", "status", "source", "set")
+                .contains(subcommand)) {
             List<String> values = new ArrayList<>(plugin.screenIds());
             if (subcommand.equals("start") || subcommand.equals("stop")) {
                 values.add("all");
             }
             return matching(values, args[1]);
+        }
+        if (args.length == 3 && subcommand.equals("source")) {
+            List<String> types = new ArrayList<>(SourceType.commandNames());
+            types.add("types");
+            return matching(types, args[2]);
         }
         if (args.length == 3 && subcommand.equals("set")) {
             return matching(SET_PROPERTIES, args[2]);

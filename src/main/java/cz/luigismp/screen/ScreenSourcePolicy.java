@@ -7,13 +7,13 @@ final class ScreenSourcePolicy {
     private ScreenSourcePolicy() {
     }
 
-    static String key(String url) {
-        return url == null ? "" : url.trim();
+    static String key(ScreenSource source) {
+        return source == null ? "" : source.key();
     }
 
     static long uniqueSourceCount(Collection<ScreenDefinition> definitions) {
         return definitions.stream()
-                .map(ScreenDefinition::url)
+                .map(ScreenDefinition::source)
                 .map(ScreenSourcePolicy::key)
                 .distinct()
                 .count();

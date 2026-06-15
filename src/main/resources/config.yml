@@ -1,10 +1,24 @@
 language: cs
 
 stream:
+  # Legacy RTMP default kept for MediaMTX compatibility.
   url: "rtmp://127.0.0.1:55556/screen"
   fps: 8
   reconnect-delay-seconds: 3
   reconnect-max-delay-seconds: 30
+
+source:
+  # Default source assigned to newly created screens.
+  type: rtmp
+  value: "rtmp://127.0.0.1:55556/screen"
+
+sources:
+  # Relative video, image and GIF paths are resolved inside this folder.
+  media-directory: media
+  allow-absolute-paths: false
+  http-timeout-seconds: 10
+  max-image-bytes: 16777216
+  max-image-pixels: 16777216
 
 screen:
   # Defaults used by newly created screens and by the legacy config migration.
@@ -21,12 +35,14 @@ screen:
   corner-b: ""
   facing: "NORTH"
 
-# Every screen stores its own source and rendering settings here.
-# Screens with the exact same URL automatically share one FFmpeg decoder.
+# Every screen stores its own typed source and rendering settings here.
+# Screens with the same source type and value automatically share one loader.
 # Example generated entry:
 # screens:
 #   main:
-#     url: "rtmp://127.0.0.1:55556/screen"
+#     source:
+#       type: rtmp
+#       value: "rtmp://127.0.0.1:55556/screen"
 #     fps: 8.0
 #     distance: 64.0
 #     world: world

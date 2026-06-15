@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 record ScreenDefinition(
         String id,
-        String url,
+        ScreenSource source,
         double fps,
         double distance,
         String world,
@@ -25,7 +25,7 @@ record ScreenDefinition(
 
     ScreenDefinition {
         id = normalizeId(id);
-        url = url == null ? "" : url.trim();
+        source = source == null ? ScreenSource.rtmp("") : source;
         world = world == null ? "" : world.trim();
         location = location == null ? null : location.clone();
         fps = Math.max(0.1, Math.min(20, fps));
@@ -40,28 +40,28 @@ record ScreenDefinition(
         return VALID_ID.matcher(normalizeId(value)).matches();
     }
 
-    ScreenDefinition withUrl(String value) {
+    ScreenDefinition withSource(ScreenSource value) {
         return new ScreenDefinition(id, value, fps, distance, world, location,
                 width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withFps(double value) {
-        return new ScreenDefinition(id, url, value, distance, world, location,
+        return new ScreenDefinition(id, source, value, distance, world, location,
                 width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withDistance(double value) {
-        return new ScreenDefinition(id, url, fps, value, world, location,
+        return new ScreenDefinition(id, source, fps, value, world, location,
                 width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withEnabled(boolean value) {
-        return new ScreenDefinition(id, url, fps, distance, world, location,
+        return new ScreenDefinition(id, source, fps, distance, world, location,
                 width, height, facing, value, permissionRequired);
     }
 
     ScreenDefinition withPermissionRequired(boolean value) {
-        return new ScreenDefinition(id, url, fps, distance, world, location,
+        return new ScreenDefinition(id, source, fps, distance, world, location,
                 width, height, facing, enabled, value);
     }
 
@@ -77,7 +77,7 @@ record ScreenDefinition(
     ScreenDefinition withRuntimeSettingsFrom(ScreenDefinition other) {
         return new ScreenDefinition(
                 id,
-                other.url,
+                other.source,
                 other.fps,
                 other.distance,
                 world,

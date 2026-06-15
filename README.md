@@ -1,22 +1,23 @@
 # LuigiScreen
 
-LuigiScreen Free is a server-side Paper/Bukkit plugin that displays a live
-RTMP video stream on a configurable wall of Minecraft maps.
+LuigiScreen Free is a server-side Paper/Bukkit plugin that displays live
+streams, videos, images and GIFs on configurable walls of Minecraft maps.
 
 Author: **unknown_56**
 
-OBS Studio or another publisher sends video to MediaMTX. LuigiScreen decodes
-the latest frame with FFmpeg and renders it through MapEngine. Players do not
-need a client mod.
+LuigiScreen loads the selected media source, decodes its latest frame and
+renders it through MapEngine. Players do not need a client mod.
 
 > LuigiScreen is currently alpha software. Back up the server and test new
 > builds away from production.
 
 ## Features
 
-- Live RTMP video on Minecraft map screens
+- RTMP and MJPEG live streams
+- Looping local videos and GIFs
+- Local and URL images
 - Multiple named screens with independent settings
-- Shared FFmpeg decoding for screens using the same URL
+- Shared decoding/loading for screens using the same source type and value
 - Configurable dimensions, locations and orientation
 - Automatic reconnect with exponential backoff
 - Decoder pause when no players are near the screen
@@ -27,7 +28,7 @@ need a client mod.
 - Optional `luigiscreen.see.<screen>` visibility permission per screen
 - Performance boss bar and debug sidebar
 - Persistent screen configuration
-- Masked RTMP credentials in plugin output
+- Masked remote-source credentials in plugin output
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ## Requirements
@@ -35,8 +36,7 @@ need a client mod.
 - Paper 1.21.11
 - Java 21
 - MapEngine 1.8.12
-- MediaMTX
-- OBS Studio or another RTMP publisher
+- MediaMTX and OBS Studio only when using RTMP
 - Windows x86_64 or Linux x86_64 server
 
 LuigiScreen uses the Bukkit plugin ecosystem but currently targets Paper APIs.
@@ -51,15 +51,14 @@ https://modrinth.com/plugin/mapengine
 2. Install MapEngine 1.8.12.
 3. Put the LuigiScreen JAR in `plugins/`.
 4. Start the server.
-5. Generate a MediaMTX setup with `/screen mediamtx <situation>`.
-6. Start MediaMTX and publish a stream from OBS.
-7. Create a screen while looking at the upper-left block of a vertical wall.
+5. Create a screen while looking at the upper-left block of a vertical wall.
+6. Select a source with `/screen source`.
 
 Example:
 
 ```text
-/screen mediamtx same-pc
 /screen create main 7 4
+/screen source main image logo.png
 /screen start main
 ```
 
@@ -71,12 +70,13 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | Command | Description |
 | --- | --- |
 | `/screen create <name> [width] [height]` | Create a named map screen |
-| `/screen clone <source> <new-name>` | Create another screen that shares the source URL |
-| `/screen list` | List all screens and masked source URLs |
+| `/screen clone <source> <new-name>` | Create another screen that shares its typed source |
+| `/screen list` | List all screens and masked source values |
 | `/screen start <name\|all>` | Enable one or every screen |
 | `/screen stop <name\|all>` | Disable streaming without deleting screens |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show the registry summary or detailed screen state |
+| `/screen source <name> <type> <value>` | Switch RTMP, MJPEG, video, image, URL image or GIF |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Change an independent screen setting |
 | `/screen reload` | Reload configuration and localization without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
@@ -109,7 +109,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 40 automated tests covering:
+The current suite contains 44 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -117,7 +117,7 @@ The current suite contains 40 automated tests covering:
 - Configuration limit clamping
 - Adaptive FPS, minimum FPS and maximum FPS limits
 - Named screen validation and legacy geometry migration helpers
-- URL-based source grouping for cloned screens
+- Typed source validation, aliases and shared-source grouping
 - Reference-counted shared video-frame lifetime
 - Granular command permission metadata
 - Per-screen visibility permission naming and defaults
@@ -132,10 +132,26 @@ support ARM, macOS or Folia.
 The default per-screen limit is 10x6 maps and 60 maps. Larger screens can
 consume substantial CPU, memory and network bandwidth.
 
-Each screen stores its own `url`, `fps`, `distance`, `world`, `location`,
+Each screen stores its own `source.type`, `source.value`, `fps`, `distance`, `world`, `location`,
 `width`, `height`, `enabled` and `permission-required` value. Screens with the
-exact same normalized URL automatically use one FFmpeg decoder and
+exact same normalized source type and value automatically use one loader and
 independently render the shared latest frame.
+
+## Media sources
+
+Relative local paths are resolved inside `plugins/LuigiScreen/media/`.
+
+```text
+/screen source main rtmp rtmp://127.0.0.1:55556/screen
+/screen source main mjpeg http://camera.local/video
+/screen source main video intro.mp4
+/screen source main image poster.png
+/screen source main url-image https://example.com/poster.png
+/screen source main gif animation.gif
+```
+
+Local videos and GIFs loop automatically. Existing `url:` config entries and
+`/screen set <name> url ...` remain supported as legacy RTMP syntax.
 
 ## Free and Plus editions
 

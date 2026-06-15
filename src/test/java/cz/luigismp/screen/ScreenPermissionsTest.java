@@ -28,6 +28,7 @@ class ScreenPermissionsTest {
                 Map.entry("stop", "luigiscreen.stop"),
                 Map.entry("remove", "luigiscreen.remove"),
                 Map.entry("status", "luigiscreen.status"),
+                Map.entry("source", "luigiscreen.source"),
                 Map.entry("set", "luigiscreen.set"),
                 Map.entry("reload", "luigiscreen.reload"),
                 Map.entry("debug", "luigiscreen.debug"),
@@ -58,6 +59,8 @@ class ScreenPermissionsTest {
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.create"));
         assertTrue(plugin.getBoolean(
+                "permissions.luigiscreen.admin.children.luigiscreen.source"));
+        assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.see.*"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.create.default"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.see.*.default"));
@@ -81,7 +84,7 @@ class ScreenPermissionsTest {
     private static ScreenDefinition definition(boolean permissionRequired) {
         return new ScreenDefinition(
                 "cinema",
-                "rtmp://example/screen",
+                ScreenSource.rtmp("rtmp://example/screen"),
                 8,
                 64,
                 "world",

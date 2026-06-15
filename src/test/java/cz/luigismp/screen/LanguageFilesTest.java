@@ -35,6 +35,8 @@ class LanguageFilesTest {
             assertNotNull(language.getString("commands.reload-success"));
             assertNotNull(language.getString("commands.clone-success"));
             assertNotNull(language.getString("commands.set-success"));
+            assertNotNull(language.getString("commands.source-success"));
+            assertNotNull(language.getString("commands.source-types"));
             assertNotNull(language.getString("commands.no-permission"));
             assertNotNull(language.getString("status.summary"));
             assertNotNull(language.getString("debug.memory"));

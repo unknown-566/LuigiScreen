@@ -24,7 +24,7 @@ class ScreenDefinitionTest {
     void storesEveryPerScreenSettingAndCalculatesTheSecondCorner() {
         ScreenDefinition screen = screen("main", "rtmp://example/screen", 8, 64);
 
-        assertEquals("rtmp://example/screen", screen.url());
+        assertEquals(ScreenSource.rtmp("rtmp://example/screen"), screen.source());
         assertEquals(8, screen.fps());
         assertEquals(64, screen.distance());
         assertEquals("world", screen.world());
@@ -42,7 +42,7 @@ class ScreenDefinitionTest {
         ScreenDefinition original = screen("main", " rtmp://example/screen ", 8, 64);
         ScreenDefinition clone = new ScreenDefinition(
                 "lobby",
-                original.url(),
+                original.source(),
                 4,
                 24,
                 "world_nether",
@@ -54,8 +54,8 @@ class ScreenDefinitionTest {
                 true
         );
 
-        assertEquals(ScreenSourcePolicy.key(original.url()),
-                ScreenSourcePolicy.key(clone.url()));
+        assertEquals(ScreenSourcePolicy.key(original.source()),
+                ScreenSourcePolicy.key(clone.source()));
         assertEquals(1, ScreenSourcePolicy.uniqueSourceCount(List.of(original, clone)));
         assertEquals(8, original.fps());
         assertEquals(4, clone.fps());
@@ -71,7 +71,8 @@ class ScreenDefinitionTest {
     void changingAUrlCreatesAnotherSourceGroup() {
         ScreenDefinition first = screen("one", "rtmp://example/one", 8, 64);
         ScreenDefinition clone = screen("two", "rtmp://example/one", 8, 64);
-        ScreenDefinition changed = clone.withUrl("rtmp://example/two");
+        ScreenDefinition changed = clone.withSource(
+                ScreenSource.rtmp("rtmp://example/two"));
 
         assertEquals(1, ScreenSourcePolicy.uniqueSourceCount(List.of(first, clone)));
         assertEquals(2, ScreenSourcePolicy.uniqueSourceCount(List.of(first, changed)));
@@ -80,11 +81,11 @@ class ScreenDefinitionTest {
     @Test
     void sourceKeysIgnoreOnlyAccidentalOuterWhitespace() {
         assertEquals(
-                ScreenSourcePolicy.key(" rtmp://example/screen "),
-                ScreenSourcePolicy.key("rtmp://example/screen")
+                ScreenSourcePolicy.key(ScreenSource.rtmp(" rtmp://example/screen ")),
+                ScreenSourcePolicy.key(ScreenSource.rtmp("rtmp://example/screen"))
         );
-        assertFalse(ScreenSourcePolicy.key("rtmp://example/one")
-                .equals(ScreenSourcePolicy.key("rtmp://example/two")));
+        assertFalse(ScreenSourcePolicy.key(ScreenSource.rtmp("rtmp://example/one"))
+                .equals(ScreenSourcePolicy.key(ScreenSource.rtmp("rtmp://example/two"))));
     }
 
     @Test
@@ -92,7 +93,7 @@ class ScreenDefinitionTest {
         ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
         ScreenDefinition reloaded = new ScreenDefinition(
                 "main",
-                "rtmp://example/two",
+                ScreenSource.rtmp("rtmp://example/two"),
                 4,
                 128,
                 original.world(),
@@ -112,7 +113,7 @@ class ScreenDefinitionTest {
         ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
         ScreenDefinition moved = new ScreenDefinition(
                 "main",
-                original.url(),
+                original.source(),
                 original.fps(),
                 original.distance(),
                 original.world(),
@@ -132,7 +133,7 @@ class ScreenDefinitionTest {
         ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
         ScreenDefinition edited = new ScreenDefinition(
                 "main",
-                "rtmp://example/two",
+                ScreenSource.rtmp("rtmp://example/two"),
                 4,
                 128,
                 "another_world",
@@ -147,7 +148,7 @@ class ScreenDefinitionTest {
         ScreenDefinition merged = original.withRuntimeSettingsFrom(edited);
 
         assertTrue(original.hasSameDisplayGeometry(merged));
-        assertEquals(edited.url(), merged.url());
+        assertEquals(edited.source(), merged.source());
         assertEquals(edited.fps(), merged.fps());
         assertEquals(edited.distance(), merged.distance());
         assertEquals(edited.enabled(), merged.enabled());
@@ -158,7 +159,7 @@ class ScreenDefinitionTest {
             String id, String url, double fps, double distance) {
         return new ScreenDefinition(
                 id,
-                url,
+                ScreenSource.rtmp(url),
                 fps,
                 distance,
                 "world",
