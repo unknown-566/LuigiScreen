@@ -49,6 +49,8 @@ final class ManagedScreen {
     private volatile long nextRenderNanos;
     private volatile IMapDisplay display;
     private volatile IDrawingSpace drawing;
+    private boolean glowing;
+    private boolean dithering;
     private FullSpacedColorBuffer previousFrame;
     private World displayWorld;
 
@@ -59,11 +61,14 @@ final class ManagedScreen {
         this.displayWorld = world;
         this.display = mapEngine.displayProvider().createBasic(
                 definition.location(), definition.secondCorner(), definition.facing());
-        this.display.glowing(plugin.getConfig().getBoolean("screen.glowing-frames", false));
         this.drawing = mapEngine.pipeline().createDrawingSpace(display);
         this.drawing.ctx().buffering(false);
         this.drawing.ctx().bundling(false);
-        reloadRenderingSettings();
+        this.glowing = plugin.getConfig().getBoolean("screen.glowing-frames", false);
+        this.dithering = plugin.getConfig().getBoolean("screen.dithering", false);
+        this.display.glowing(glowing);
+        this.drawing.ctx().converter(
+                dithering ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
     }
 
     String id() {
@@ -82,16 +87,40 @@ final class ManagedScreen {
     void reloadRenderingSettings() {
         IMapDisplay currentDisplay = display;
         IDrawingSpace currentDrawing = drawing;
-        if (currentDisplay != null) {
-            currentDisplay.glowing(
-                    plugin.getConfig().getBoolean("screen.glowing-frames", false));
+        boolean updatedGlowing =
+                plugin.getConfig().getBoolean("screen.glowing-frames", false);
+        boolean updatedDithering =
+                plugin.getConfig().getBoolean("screen.dithering", false);
+        if (currentDisplay != null && updatedGlowing != glowing) {
+            despawnTrackedViewers(currentDisplay);
+            currentDisplay.glowing(updatedGlowing);
+            glowing = updatedGlowing;
         }
-        if (currentDrawing != null) {
+        if (currentDrawing != null && updatedDithering != dithering) {
             currentDrawing.ctx().converter(
-                    plugin.getConfig().getBoolean("screen.dithering", false)
-                            ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
+                    updatedDithering ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
+            dithering = updatedDithering;
         }
         forceFullFrame.set(true);
+    }
+
+    void prepareViewerResync() {
+        IMapDisplay currentDisplay = display;
+        if (currentDisplay != null) {
+            despawnTrackedViewers(currentDisplay);
+        }
+        forceFullFrame.set(true);
+    }
+
+    private void despawnTrackedViewers(IMapDisplay currentDisplay) {
+        for (UUID uuid : new HashSet<>(spawnedViewers)) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                currentDisplay.despawn(player);
+            }
+        }
+        spawnedViewers.clear();
+        receiverSnapshot = new Player[0];
     }
 
     int width() {

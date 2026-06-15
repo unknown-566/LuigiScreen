@@ -400,8 +400,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             configureFfmpegLogging();
             migrateLegacyScreen();
             reconcileScreens(readScreens());
+            saveConfig();
             startRenderExecutor();
-            refreshViewers();
+            scheduleViewerRefresh();
             startEnabledSources();
             if (debugBossBars != null) {
                 debugBossBars.start();
@@ -600,30 +601,34 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         Map<String, LoadedScreen> remaining = new LinkedHashMap<>(desiredScreens);
         sources.clear();
 
-        for (Map.Entry<String, ManagedScreen> entry
-                : new ArrayList<>(screens.entrySet())) {
+        for (Map.Entry<String, ManagedScreen> entry : screens.entrySet()) {
             String id = entry.getKey();
             ManagedScreen current = entry.getValue();
             LoadedScreen desired = remaining.remove(id);
 
             if (desired == null) {
-                screens.remove(id, current);
-                current.destroy();
-                continue;
-            }
-
-            if (current.definition().hasSameDisplayGeometry(desired.definition())) {
-                current.updateDefinition(desired.definition());
+                persist(current.definition());
+                current.prepareViewerResync();
                 current.reloadRenderingSettings();
-                sourceFor(desired.definition().url()).attach(current);
+                sourceFor(current.definition().url()).attach(current);
                 showConfiguredState(current);
+                getLogger().warning(messages.plain(
+                        "logs.reload-screen-preserved", "screen", id));
                 continue;
             }
 
-            screens.remove(id, current);
-            current.destroy();
-            ManagedScreen replacement = register(desired.definition(), desired.world());
-            showConfiguredState(replacement);
+            ScreenDefinition updated = desired.definition();
+            if (!current.definition().hasSameDisplayGeometry(updated)) {
+                updated = current.definition().withRuntimeSettingsFrom(updated);
+                persist(updated);
+                getLogger().warning(messages.plain(
+                        "logs.reload-geometry-preserved", "screen", id));
+            }
+            current.prepareViewerResync();
+            current.updateDefinition(updated);
+            current.reloadRenderingSettings();
+            sourceFor(updated.url()).attach(current);
+            showConfiguredState(current);
         }
 
         for (LoadedScreen desired : remaining.values()) {
@@ -720,8 +725,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         cancelPendingStreamRestart();
         stopRenderExecutor();
         reconcileScreens(readScreens());
+        saveConfig();
         startRenderExecutor();
-        refreshViewers();
+        scheduleViewerRefresh();
         startEnabledSources();
     }
 
@@ -731,6 +737,10 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         if (task != null) {
             task.cancel();
         }
+    }
+
+    private void scheduleViewerRefresh() {
+        Bukkit.getScheduler().runTask(this, this::refreshViewers);
     }
 
     private void startRenderExecutor() {

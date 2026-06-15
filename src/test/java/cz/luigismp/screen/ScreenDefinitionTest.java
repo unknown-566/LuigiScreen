@@ -127,6 +127,33 @@ class ScreenDefinitionTest {
         assertFalse(original.hasSameDisplayGeometry(moved));
     }
 
+    @Test
+    void reloadCanApplyRuntimeSettingsWithoutChangingGeometry() {
+        ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
+        ScreenDefinition edited = new ScreenDefinition(
+                "main",
+                "rtmp://example/two",
+                4,
+                128,
+                "another_world",
+                new BlockVector(100, 90, 100),
+                3,
+                2,
+                BlockFace.NORTH,
+                false,
+                true
+        );
+
+        ScreenDefinition merged = original.withRuntimeSettingsFrom(edited);
+
+        assertTrue(original.hasSameDisplayGeometry(merged));
+        assertEquals(edited.url(), merged.url());
+        assertEquals(edited.fps(), merged.fps());
+        assertEquals(edited.distance(), merged.distance());
+        assertEquals(edited.enabled(), merged.enabled());
+        assertEquals(edited.permissionRequired(), merged.permissionRequired());
+    }
+
     private static ScreenDefinition screen(
             String id, String url, double fps, double distance) {
         return new ScreenDefinition(

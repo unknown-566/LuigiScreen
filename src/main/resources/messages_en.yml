@@ -207,3 +207,5 @@ logs:
   mediamtx-failed: "MediaMTX setup failed: <error>"
   saved-screen-invalid-name: "Saved screen <screen> is invalid and was skipped."
   legacy-migrated: "Migrated the legacy single screen to screens.main."
+  reload-screen-preserved: "Screen <screen> is missing from config and was preserved. Use /screen remove <screen> to delete it."
+  reload-geometry-preserved: "Screen <screen> geometry changed in config. Its existing display was preserved; remove and recreate it to change geometry."

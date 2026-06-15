@@ -74,6 +74,22 @@ record ScreenDefinition(
                 && facing == other.facing;
     }
 
+    ScreenDefinition withRuntimeSettingsFrom(ScreenDefinition other) {
+        return new ScreenDefinition(
+                id,
+                other.url,
+                other.fps,
+                other.distance,
+                world,
+                location,
+                width,
+                height,
+                facing,
+                other.enabled,
+                other.permissionRequired
+        );
+    }
+
     BlockVector secondCorner() {
         return ScreenPolicy.secondCorner(location, facing, width, height);
     }

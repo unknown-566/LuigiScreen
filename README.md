@@ -3,6 +3,8 @@
 LuigiScreen Free is a server-side Paper/Bukkit plugin that displays a live
 RTMP video stream on a configurable wall of Minecraft maps.
 
+Author: **unknown_56**
+
 OBS Studio or another publisher sends video to MediaMTX. LuigiScreen decodes
 the latest frame with FFmpeg and renders it through MapEngine. Players do not
 need a client mod.
@@ -76,7 +78,7 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show the registry summary or detailed screen state |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Change an independent screen setting |
-| `/screen reload` | Reload configuration and localization without removing unchanged screens |
+| `/screen reload` | Reload configuration and localization without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a MediaMTX configuration |
 
@@ -107,7 +109,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 39 automated tests covering:
+The current suite contains 40 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction

@@ -196,6 +196,8 @@ logs:
   render-failed-screen: "Vykreslení plátna <screen> přes MapEngine selhalo: <error>"
   saved-screen-invalid-name: "Uložené plátno <screen> je neplatné a bylo přeskočeno."
   legacy-migrated: "Staré samostatné plátno bylo převedeno na screens.main."
+  reload-screen-preserved: "Plátno <screen> v configu chybí, proto zůstalo zachované. Pro smazání použij /screen remove <screen>."
+  reload-geometry-preserved: "Geometrie plátna <screen> byla v configu změněna. Existující plátno zůstalo zachované; pro změnu geometrie ho odstraň a vytvoř znovu."
   reload-stop-failed: "Opětovné načtení bylo zrušeno, protože se RTMP dekodér neukončil."
   reload-success: "Konfigurace, jazyk a plátno byly znovu načteny."
   reload-failed: "LuigiScreen se nepodařilo znovu načíst: <error>"

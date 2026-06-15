@@ -163,7 +163,7 @@ Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
-| `/screen reload` | Reload configuration without removing unchanged screens |
+| `/screen reload` | Reload configuration without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
@@ -226,12 +226,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.1.0-alpha.11.jar
 ```
 
-**File size:** 55,251,973 bytes
+**File size:** 55,252,755 bytes
 
 **SHA-256:**
 
 ```text
-D198DF287E38FDF60E428E6A6A637E92B73F17AF77BBB4E39C0BB0EE25277F96
+085A090EF2AF27FF93A72F0EA6A034A98983D9672B613436F8FF1E22422D519F
 ```
 
 **Dependency:**
@@ -246,11 +246,14 @@ D198DF287E38FDF60E428E6A6A637E92B73F17AF77BBB4E39C0BB0EE25277F96
 ### Highlights
 
 - Fixed `/screen reload` removing MapEngine displays
-- Reload now preserves displays whose world, location, size and facing did not change
+- Reload never destroys an existing MapEngine display
+- Screens missing from config are restored; use `/screen remove` to delete them
+- Geometry edits are kept safe until the screen is explicitly removed and recreated
 - URL, FPS, distance, enabled, permission and rendering settings update in place
 - MediaMTX source changes use the same non-destructive screen reconciliation
-- Added reload geometry regression tests
-- 39 automated tests
+- Fixed viewer respawning when the glowing setting changes
+- Corrected the plugin author to `unknown_56`
+- 40 automated tests
 
 ### Platform support
 

@@ -3,12 +3,12 @@ version: '${project.version}'
 main: cz.luigismp.screen.LuigiScreenPlugin
 api-version: '1.21.11'
 depend: [MapEngine]
-authors: [LuigiSMP]
+authors: [unknown_56]
 description: A server-side Paper/Bukkit plugin for live RTMP map screens.
 
 commands:
   luigiscreen:
-    description: Manage the LuigiSMP live screen.
+    description: Manage LuigiScreen live screens.
     aliases: [screen]
     usage: /screen <create|clone|list|start|stop|remove|status|set|reload|debug|mediamtx>
 

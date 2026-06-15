@@ -12,6 +12,13 @@
     <description>A server-side Paper/Bukkit plugin for live RTMP video screens.</description>
     <url>https://github.com/unknown-566/LuigiScreen</url>
 
+    <developers>
+        <developer>
+            <id>unknown_56</id>
+            <name>unknown_56</name>
+        </developer>
+    </developers>
+
     <licenses>
         <license>
             <name>GNU Affero General Public License v3.0 only</name>

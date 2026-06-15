@@ -53,6 +53,7 @@ class ScreenPermissionsTest {
                 new InputStreamReader(stream, StandardCharsets.UTF_8));
 
         assertNull(plugin.getString("commands.luigiscreen.permission"));
+        assertEquals("unknown_56", plugin.getStringList("authors").getFirst());
         assertEquals("op", plugin.getString("permissions.luigiscreen.admin.default"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.create"));
