@@ -4,6 +4,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.util.BlockVector;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 record ScreenDefinition(
@@ -62,6 +63,15 @@ record ScreenDefinition(
     ScreenDefinition withPermissionRequired(boolean value) {
         return new ScreenDefinition(id, url, fps, distance, world, location,
                 width, height, facing, enabled, value);
+    }
+
+    boolean hasSameDisplayGeometry(ScreenDefinition other) {
+        return other != null
+                && Objects.equals(world, other.world)
+                && Objects.equals(location, other.location)
+                && width == other.width
+                && height == other.height
+                && facing == other.facing;
     }
 
     BlockVector secondCorner() {

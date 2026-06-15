@@ -76,7 +76,7 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show the registry summary or detailed screen state |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Change an independent screen setting |
-| `/screen reload` | Reload configuration, localization and all screens |
+| `/screen reload` | Reload configuration and localization without removing unchanged screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a MediaMTX configuration |
 
@@ -107,7 +107,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 37 automated tests covering:
+The current suite contains 39 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction

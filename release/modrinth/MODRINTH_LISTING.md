@@ -163,7 +163,7 @@ Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
-| `/screen reload` | Reload configuration, localization and all screens |
+| `/screen reload` | Reload configuration without removing unchanged screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
@@ -208,9 +208,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.10`
+**Version number:** `1.1.0-alpha.11`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.10`
+**Version title:** `LuigiScreen 1.1.0-alpha.11`
 
 **Release channel:** Alpha
 
@@ -223,15 +223,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.10.jar
+LuigiScreen-1.1.0-alpha.11.jar
 ```
 
-**File size:** 55,249,918 bytes
+**File size:** 55,251,973 bytes
 
 **SHA-256:**
 
 ```text
-BDA8D4DE4C41C0588C872276983A621A1111EBAA3D7B4C25277604BF407643A2
+D198DF287E38FDF60E428E6A6A637E92B73F17AF77BBB4E39C0BB0EE25277F96
 ```
 
 **Dependency:**
@@ -241,14 +241,16 @@ BDA8D4DE4C41C0588C872276983A621A1111EBAA3D7B4C25277604BF407643A2
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.10
+## LuigiScreen 1.1.0-alpha.11
 
 ### Highlights
 
-- Offline, connecting, waiting and stopped screens now display `LuigiScreen`
-- Added the customizable `screen.offline-title` localization key
-- Existing language files receive the new title through the bundled fallback
-- 37 automated tests
+- Fixed `/screen reload` removing MapEngine displays
+- Reload now preserves displays whose world, location, size and facing did not change
+- URL, FPS, distance, enabled, permission and rendering settings update in place
+- MediaMTX source changes use the same non-destructive screen reconciliation
+- Added reload geometry regression tests
+- 39 automated tests
 
 ### Platform support
 
@@ -321,7 +323,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.10` uploaded as Alpha
+- [ ] `1.1.0-alpha.11` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

@@ -187,7 +187,7 @@ shutdown.
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
-| `/screen reload` | Reload configuration, messages and all screens |
+| `/screen reload` | Reload configuration without removing unchanged screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
@@ -266,13 +266,13 @@ as official LuigiScreen releases.
 **Display name:**
 
 ```text
-LuigiScreen 1.1.0-alpha.10
+LuigiScreen 1.1.0-alpha.11
 ```
 
 **File:**
 
 ```text
-LuigiScreen-1.1.0-alpha.10.jar
+LuigiScreen-1.1.0-alpha.11.jar
 ```
 
 **Release type:** Alpha
@@ -286,12 +286,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,249,918 bytes
+**File size:** 55,251,973 bytes
 
 **SHA-256:**
 
 ```text
-BDA8D4DE4C41C0588C872276983A621A1111EBAA3D7B4C25277604BF407643A2
+D198DF287E38FDF60E428E6A6A637E92B73F17AF77BBB4E39C0BB0EE25277F96
 ```
 
 ## File dependency
@@ -318,14 +318,16 @@ links.
 Paste this into the file changelog:
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.10
+## LuigiScreen 1.1.0-alpha.11
 
 ### Features
 
-- Offline, connecting, waiting and stopped screens now display `LuigiScreen`
-- Added the customizable `screen.offline-title` localization key
-- Existing language files receive the new title through the bundled fallback
-- 37 automated tests
+- Fixed `/screen reload` removing MapEngine displays
+- Reload now preserves displays whose world, location, size and facing did not change
+- URL, FPS, distance, enabled, permission and rendering settings update in place
+- MediaMTX source changes use the same non-destructive screen reconciliation
+- Added reload geometry regression tests
+- 39 automated tests
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ### Requirements

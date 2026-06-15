@@ -392,8 +392,6 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             return false;
         }
         stopRenderExecutor();
-        destroyScreens();
-        sources.clear();
         try {
             reloadConfig();
             getConfig().options().copyDefaults(true);
@@ -401,7 +399,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             messages.load();
             configureFfmpegLogging();
             migrateLegacyScreen();
-            loadScreens();
+            reconcileScreens(readScreens());
             startRenderExecutor();
             refreshViewers();
             startEnabledSources();
@@ -416,6 +414,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             if (renderExecutor == null) {
                 startRenderExecutor();
             }
+            startEnabledSources();
             return false;
         }
     }
@@ -546,9 +545,17 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private void loadScreens() {
+        for (LoadedScreen loaded : readScreens().values()) {
+            ManagedScreen screen = register(loaded.definition(), loaded.world());
+            showConfiguredState(screen);
+        }
+    }
+
+    private Map<String, LoadedScreen> readScreens() {
+        Map<String, LoadedScreen> loaded = new LinkedHashMap<>();
         ConfigurationSection section = getConfig().getConfigurationSection("screens");
         if (section == null) {
-            return;
+            return loaded;
         }
         for (String rawId : section.getKeys(false)) {
             String id = ScreenDefinition.normalizeId(rawId);
@@ -584,10 +591,50 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                         "logs.saved-screen-invalid-name", "screen", rawId));
                 continue;
             }
-            ManagedScreen screen = register(definition, world);
-            screen.showOfflineFrame(messages.plain(
-                    definition.enabled() ? "screen.waiting" : "screen.stopped"));
+            loaded.put(id, new LoadedScreen(definition, world));
         }
+        return loaded;
+    }
+
+    private void reconcileScreens(Map<String, LoadedScreen> desiredScreens) {
+        Map<String, LoadedScreen> remaining = new LinkedHashMap<>(desiredScreens);
+        sources.clear();
+
+        for (Map.Entry<String, ManagedScreen> entry
+                : new ArrayList<>(screens.entrySet())) {
+            String id = entry.getKey();
+            ManagedScreen current = entry.getValue();
+            LoadedScreen desired = remaining.remove(id);
+
+            if (desired == null) {
+                screens.remove(id, current);
+                current.destroy();
+                continue;
+            }
+
+            if (current.definition().hasSameDisplayGeometry(desired.definition())) {
+                current.updateDefinition(desired.definition());
+                current.reloadRenderingSettings();
+                sourceFor(desired.definition().url()).attach(current);
+                showConfiguredState(current);
+                continue;
+            }
+
+            screens.remove(id, current);
+            current.destroy();
+            ManagedScreen replacement = register(desired.definition(), desired.world());
+            showConfiguredState(replacement);
+        }
+
+        for (LoadedScreen desired : remaining.values()) {
+            ManagedScreen screen = register(desired.definition(), desired.world());
+            showConfiguredState(screen);
+        }
+    }
+
+    private void showConfiguredState(ManagedScreen screen) {
+        screen.showOfflineFrame(messages.plain(
+                screen.enabled() ? "screen.waiting" : "screen.stopped"));
     }
 
     private void migrateLegacyScreen() {
@@ -672,9 +719,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
         cancelPendingStreamRestart();
         stopRenderExecutor();
-        destroyScreens();
-        sources.clear();
-        loadScreens();
+        reconcileScreens(readScreens());
         startRenderExecutor();
         refreshViewers();
         startEnabledSources();
@@ -810,5 +855,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         } catch (IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    private record LoadedScreen(ScreenDefinition definition, World world) {
     }
 }

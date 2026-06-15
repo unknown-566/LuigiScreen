@@ -63,8 +63,7 @@ final class ManagedScreen {
         this.drawing = mapEngine.pipeline().createDrawingSpace(display);
         this.drawing.ctx().buffering(false);
         this.drawing.ctx().bundling(false);
-        this.drawing.ctx().converter(plugin.getConfig().getBoolean("screen.dithering", false)
-                ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
+        reloadRenderingSettings();
     }
 
     String id() {
@@ -78,6 +77,21 @@ final class ManagedScreen {
     void updateDefinition(ScreenDefinition value) {
         definition = value;
         nextRenderNanos = 0;
+    }
+
+    void reloadRenderingSettings() {
+        IMapDisplay currentDisplay = display;
+        IDrawingSpace currentDrawing = drawing;
+        if (currentDisplay != null) {
+            currentDisplay.glowing(
+                    plugin.getConfig().getBoolean("screen.glowing-frames", false));
+        }
+        if (currentDrawing != null) {
+            currentDrawing.ctx().converter(
+                    plugin.getConfig().getBoolean("screen.dithering", false)
+                            ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
+        }
+        forceFullFrame.set(true);
     }
 
     int width() {

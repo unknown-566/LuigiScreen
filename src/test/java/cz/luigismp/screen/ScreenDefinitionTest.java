@@ -87,6 +87,46 @@ class ScreenDefinitionTest {
                 .equals(ScreenSourcePolicy.key("rtmp://example/two")));
     }
 
+    @Test
+    void reloadKeepsDisplayWhenOnlyRuntimeSettingsChange() {
+        ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
+        ScreenDefinition reloaded = new ScreenDefinition(
+                "main",
+                "rtmp://example/two",
+                4,
+                128,
+                original.world(),
+                original.location(),
+                original.width(),
+                original.height(),
+                original.facing(),
+                false,
+                true
+        );
+
+        assertTrue(original.hasSameDisplayGeometry(reloaded));
+    }
+
+    @Test
+    void reloadRecreatesDisplayWhenItsGeometryChanges() {
+        ScreenDefinition original = screen("main", "rtmp://example/one", 8, 64);
+        ScreenDefinition moved = new ScreenDefinition(
+                "main",
+                original.url(),
+                original.fps(),
+                original.distance(),
+                original.world(),
+                new BlockVector(11, 70, 20),
+                original.width(),
+                original.height(),
+                original.facing(),
+                original.enabled(),
+                original.permissionRequired()
+        );
+
+        assertFalse(original.hasSameDisplayGeometry(moved));
+    }
+
     private static ScreenDefinition screen(
             String id, String url, double fps, double distance) {
         return new ScreenDefinition(
