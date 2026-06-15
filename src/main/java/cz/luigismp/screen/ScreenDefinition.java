@@ -16,7 +16,8 @@ record ScreenDefinition(
         int width,
         int height,
         BlockFace facing,
-        boolean enabled
+        boolean enabled,
+        boolean permissionRequired
 ) {
 
     private static final Pattern VALID_ID = Pattern.compile("[a-z0-9_-]{1,32}");
@@ -40,22 +41,27 @@ record ScreenDefinition(
 
     ScreenDefinition withUrl(String value) {
         return new ScreenDefinition(id, value, fps, distance, world, location,
-                width, height, facing, enabled);
+                width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withFps(double value) {
         return new ScreenDefinition(id, url, value, distance, world, location,
-                width, height, facing, enabled);
+                width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withDistance(double value) {
         return new ScreenDefinition(id, url, fps, value, world, location,
-                width, height, facing, enabled);
+                width, height, facing, enabled, permissionRequired);
     }
 
     ScreenDefinition withEnabled(boolean value) {
         return new ScreenDefinition(id, url, fps, distance, world, location,
-                width, height, facing, value);
+                width, height, facing, value, permissionRequired);
+    }
+
+    ScreenDefinition withPermissionRequired(boolean value) {
+        return new ScreenDefinition(id, url, fps, distance, world, location,
+                width, height, facing, enabled, value);
     }
 
     BlockVector secondCorner() {

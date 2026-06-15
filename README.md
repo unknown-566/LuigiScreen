@@ -21,6 +21,8 @@ need a client mod.
 - Adaptive FPS and map-update limits
 - Guided MediaMTX setup for five network situations
 - Czech and English localization
+- Granular permission for every management command
+- Optional `luigiscreen.see.<screen>` visibility permission per screen
 - Performance boss bar and debug sidebar
 - Persistent screen configuration
 - Masked RTMP credentials in plugin output
@@ -73,12 +75,25 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | `/screen stop <name\|all>` | Disable streaming without deleting screens |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show the registry summary or detailed screen state |
-| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Change an independent screen setting |
+| `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Change an independent screen setting |
 | `/screen reload` | Reload configuration, localization and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a MediaMTX configuration |
 
-The `luigiscreen.admin` permission is granted to operators by default.
+`luigiscreen.admin` is granted to operators and includes every command plus
+access to all protected screens. Individual permissions include
+`luigiscreen.create`, `luigiscreen.remove`, `luigiscreen.start`,
+`luigiscreen.stop`, `luigiscreen.status` and equivalent nodes for the other
+commands.
+
+Screens are public by default. Enable protection with:
+
+```text
+/screen set main permission true
+```
+
+Then grant `luigiscreen.see.main` or `luigiscreen.see.*` through the server's
+permission plugin.
 
 ## Building
 
@@ -92,7 +107,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 33 automated tests covering:
+The current suite contains 37 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -102,6 +117,8 @@ The current suite contains 33 automated tests covering:
 - Named screen validation and legacy geometry migration helpers
 - URL-based source grouping for cloned screens
 - Reference-counted shared video-frame lifetime
+- Granular command permission metadata
+- Per-screen visibility permission naming and defaults
 - MediaMTX generation
 - Localization files and debug text formatting
 
@@ -114,9 +131,9 @@ The default per-screen limit is 10x6 maps and 60 maps. Larger screens can
 consume substantial CPU, memory and network bandwidth.
 
 Each screen stores its own `url`, `fps`, `distance`, `world`, `location`,
-`width`, `height` and `enabled` value. Screens with the exact same normalized
-URL automatically use one FFmpeg decoder and independently render the shared
-latest frame.
+`width`, `height`, `enabled` and `permission-required` value. Screens with the
+exact same normalized URL automatically use one FFmpeg decoder and
+independently render the shared latest frame.
 
 ## Free and Plus editions
 

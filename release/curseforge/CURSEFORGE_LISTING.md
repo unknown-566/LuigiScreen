@@ -102,6 +102,8 @@ Players do not need to install a client mod.
 - Configurable map-update rate limits
 - Guided MediaMTX setup for five common network situations
 - Editable Czech and English localization
+- Granular permissions for every management command
+- Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar
 - Rotating 15-line debug sidebar
 - Masked RTMP credentials in status output and plugin logs
@@ -184,13 +186,16 @@ shutdown.
 | `/screen stop <name\|all>` | Disable screens without deleting them |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
-| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Update one screen |
+| `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
 | `/screen reload` | Reload configuration, messages and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
-The `luigiscreen.admin` permission controls every management command and is
-granted to server operators by default.
+`luigiscreen.admin` is granted to operators and includes every command.
+Individual permissions such as `luigiscreen.create`, `luigiscreen.remove`,
+`luigiscreen.start`, `luigiscreen.stop` and `luigiscreen.status` can be
+assigned separately. Screens are public by default and may optionally require
+`luigiscreen.see.<screen-name>`.
 
 Available MediaMTX situations:
 
@@ -261,13 +266,13 @@ as official LuigiScreen releases.
 **Display name:**
 
 ```text
-LuigiScreen 1.1.0-alpha.8
+LuigiScreen 1.1.0-alpha.9
 ```
 
 **File:**
 
 ```text
-LuigiScreen-1.1.0-alpha.8.jar
+LuigiScreen-1.1.0-alpha.9.jar
 ```
 
 **Release type:** Alpha
@@ -281,12 +286,12 @@ Bukkit plugin platform and state Paper support in the description.
 
 **Java version:** Java 21
 
-**File size:** 55,247,077 bytes
+**File size:** 55,249,902 bytes
 
 **SHA-256:**
 
 ```text
-73578F893A1848743B835C6147F359DBA8D166885F7F01F3ECAA0A4913EF0587
+AD3CCCAC043C24747CEEA25B04E4A2DA95267566A160403760D7B1078DCF0B25
 ```
 
 ## File dependency
@@ -313,18 +318,17 @@ links.
 Paste this into the file changelog:
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.8
+## LuigiScreen 1.1.0-alpha.9
 
 ### Features
 
-- Multiple named screens with independent settings
-- `/screen clone` and URL-based source sharing
-- One FFmpeg decoder for every unique RTMP URL
-- Reference-counted decoded frames shared by clones
-- Independent MapEngine rendering and FPS for every screen
-- Automatic migration from the old single-screen configuration
-- Expanded multi-screen status and debug statistics
-- 33 automated tests
+- Granular permissions for every `/screen` subcommand
+- Optional visibility protection for individual screens
+- Dynamic `luigiscreen.see.<screen-name>` permissions
+- `luigiscreen.see.*` wildcard access
+- `/screen set <name> permission <true|false>`
+- Public screens by default through `permission-required: false`
+- 37 automated tests
 - Windows x86_64 and Linux x86_64 FFmpeg natives
 
 ### Requirements

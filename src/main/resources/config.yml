@@ -35,6 +35,7 @@ screen:
 #     height: 4
 #     facing: NORTH
 #     enabled: true
+#     permission-required: false
 screens: {}
 
 migration:

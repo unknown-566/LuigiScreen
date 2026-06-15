@@ -147,6 +147,9 @@ final class ManagedScreen {
             if (player.getWorld() != currentWorld) {
                 continue;
             }
+            if (!ScreenPermissions.canView(player, definition)) {
+                continue;
+            }
             double dx = player.getLocation().getX() - centerX;
             double dy = player.getLocation().getY() - centerY;
             double dz = player.getLocation().getZ() - centerZ;

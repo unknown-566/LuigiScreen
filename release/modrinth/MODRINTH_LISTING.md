@@ -82,6 +82,8 @@ No client mod is required. Players join with a normal Minecraft client.
 - Delta map updates to reduce unnecessary traffic
 - Guided MediaMTX configuration for five network situations
 - Editable Czech and English localization
+- Granular permissions for every management command
+- Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar and debug sidebar
 - Persistent screen configuration across restarts
 - Masked RTMP credentials in commands and plugin logs
@@ -160,12 +162,16 @@ Read the [complete step-by-step documentation](https://unknown-56-works.gitbook.
 | `/screen stop <name\|all>` | Disable screens without deleting them |
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
-| `/screen set <name> <url\|fps\|distance\|enabled> <value>` | Update one screen |
+| `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
 | `/screen reload` | Reload configuration, localization and all screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a guided MediaMTX configuration |
 
-Management commands require the `luigiscreen.admin` permission, which is granted to operators by default.
+`luigiscreen.admin` is granted to operators and includes every command.
+Individual nodes such as `luigiscreen.create`, `luigiscreen.start`,
+`luigiscreen.stop`, `luigiscreen.remove` and `luigiscreen.status` can be
+assigned separately. Screens are public by default and can optionally require
+`luigiscreen.see.<screen-name>`.
 
 ## Performance safeguards
 
@@ -202,9 +208,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.8`
+**Version number:** `1.1.0-alpha.9`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.8`
+**Version title:** `LuigiScreen 1.1.0-alpha.9`
 
 **Release channel:** Alpha
 
@@ -217,15 +223,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.8.jar
+LuigiScreen-1.1.0-alpha.9.jar
 ```
 
-**File size:** 55,247,077 bytes
+**File size:** 55,249,902 bytes
 
 **SHA-256:**
 
 ```text
-73578F893A1848743B835C6147F359DBA8D166885F7F01F3ECAA0A4913EF0587
+AD3CCCAC043C24747CEEA25B04E4A2DA95267566A160403760D7B1078DCF0B25
 ```
 
 **Dependency:**
@@ -235,19 +241,18 @@ LuigiScreen-1.1.0-alpha.8.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.8
+## LuigiScreen 1.1.0-alpha.9
 
 ### Highlights
 
-- Multiple named screens
-- Independent URL, FPS, distance, world, location, width, height and enabled state per screen
-- `/screen clone` for creating another display from an existing screen
-- One shared FFmpeg decoder for every unique RTMP URL
-- Reference-counted shared frames without a decoded-image copy per clone
-- Independent MapEngine rendering and latest-frame pacing for every screen
-- Automatic migration from the old single-screen configuration
-- Expanded multi-screen status and debug statistics
-- 33 automated tests
+- Granular permissions for every `/screen` subcommand
+- `luigiscreen.admin` remains the operator-level parent permission
+- Optional visibility protection for individual screens
+- Dynamic `luigiscreen.see.<screen-name>` permissions
+- `luigiscreen.see.*` wildcard access
+- `/screen set <name> permission <true|false>`
+- Public screens by default through `permission-required: false`
+- 37 automated tests
 
 ### Platform support
 
@@ -320,7 +325,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.8` uploaded as Alpha
+- [ ] `1.1.0-alpha.9` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

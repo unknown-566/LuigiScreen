@@ -7,6 +7,7 @@ common:
   not-available: "N/A"
 
 commands:
+  no-permission: "<red>Pro tento příkaz potřebuješ oprávnění <permission>.</red>"
   screen-missing: "<red>Plátno <screen> neexistuje.</red>"
   target-required: "<red>Existuje více pláten. Přidej název plátna nebo použij all.</red>"
   invalid-name: "<red>Název plátna smí obsahovat pouze a-z, 0-9, _ nebo - a nejvýše 32 znaků.</red>"
@@ -15,17 +16,17 @@ commands:
   clone-success: "<green>Plátno <source> bylo naklonováno jako <screen>. Dokud mají stejnou URL, sdílejí jeden dekodér.</green>"
   clone-failed: "<red>Na tomto místě se plátno nepodařilo naklonovat.</red>"
   list-header: "<green>Počet pláten: <screens>, sdílené zdroje: <sources>:</green>"
-  list-entry: "<gray>- <white><screen></white>: <enabled>, <width>x<height>, <world>, <fps> FPS, <distance> bloků, <url></gray>"
+  list-entry: "<gray>- <white><screen></white>: <enabled>, <width>x<height>, <world>, <fps> FPS, <distance> bloků, chráněné: <permission_required> (<view_permission>), <url></gray>"
   screen-started: "<green>Plátno <screen> bylo zapnuto a jeho zdroj se spouští.</green>"
   screen-stopped: "<green>Plátno <screen> bylo vypnuto.</green>"
   screen-removed: "<green>Plátno <screen> bylo odstraněno.</green>"
   all-started: "<green>Zapnuto pláten: <count>.</green>"
   all-stopped: "<green>Vypnuto pláten: <count>.</green>"
-  set-usage: "<red>Použití: /screen set <název> <url|fps|distance|enabled> <hodnota></red>"
+  set-usage: "<red>Použití: /screen set <název> <url|fps|distance|enabled|permission> <hodnota></red>"
   set-success: "<green>Vlastnost <property> plátna <screen> byla upravena.</green>"
-  set-invalid: "<red>Neplatná hodnota pro <property>. FPS: 0.1-20, distance: 8-1024, enabled: true/false.</red>"
+  set-invalid: "<red>Neplatná hodnota pro <property>. FPS: 0.1-20, distance: 8-1024, enabled/permission: true/false.</red>"
   help-clone: "<white>/screen clone <zdroj> <nový-název></white><gray> - vytvoří další plátno se sdíleným zdrojem</gray>"
-  help-set: "<white>/screen set <název> <url|fps|distance|enabled> <hodnota></white>"
+  help-set: "<white>/screen set <název> <url|fps|distance|enabled|permission> <hodnota></white>"
   no-display: "<red>Nejdříve vytvoř plátno: /screen create main 7 4</red>"
   stream-connecting: "<green>Připojuji se k RTMP streamu...</green>"
   stream-already-running: "<red>Stream už běží.</red>"
@@ -55,7 +56,7 @@ status:
   missing: "<red>Plátno <screen> neexistuje.</red>"
   summary: "<gray>Plátna: <screens>, zapnutá: <enabled>, sdílené zdroje: <sources>, celkem map: <maps>. Použij /screen list nebo /screen status <název>.</gray>"
   no-display: "<gray>Žádné plátno nebylo vytvořeno.</gray>"
-  line: "<gray>Plátno <name> <width>x<height>, zapnuto: <enabled>, stream: <stream>, sdílí pláten: <shared>, chyba streamu: <stream_error>, efektivní FPS: <fps>, vzdálenost: <distance>, diváci: <viewers>, přijaté/vykreslené: <received>/<rendered>, chyba vykreslení: <render_error>, svět: <world>, směr: <facing>, URL: <url></gray>"
+  line: "<gray>Plátno <name> <width>x<height>, zapnuto: <enabled>, chráněné: <permission_required> (<view_permission>), stream: <stream>, sdílí pláten: <shared>, chyba streamu: <stream_error>, efektivní FPS: <fps>, vzdálenost: <distance>, diváci: <viewers>, přijaté/vykreslené: <received>/<rendered>, chyba vykreslení: <render_error>, svět: <world>, směr: <facing>, URL: <url></gray>"
 
 screen:
   title: "LuigiSMP"

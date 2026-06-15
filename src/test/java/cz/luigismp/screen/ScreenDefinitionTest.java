@@ -33,6 +33,7 @@ class ScreenDefinitionTest {
         assertEquals(4, screen.height());
         assertEquals(BlockFace.SOUTH, screen.facing());
         assertTrue(screen.enabled());
+        assertFalse(screen.permissionRequired());
         assertEquals(new BlockVector(16, 67, 20), screen.secondCorner());
     }
 
@@ -49,7 +50,8 @@ class ScreenDefinitionTest {
                 original.width(),
                 original.height(),
                 BlockFace.WEST,
-                false
+                false,
+                true
         );
 
         assertEquals(ScreenSourcePolicy.key(original.url()),
@@ -61,6 +63,8 @@ class ScreenDefinitionTest {
         assertEquals(24, clone.distance());
         assertTrue(original.enabled());
         assertFalse(clone.enabled());
+        assertFalse(original.permissionRequired());
+        assertTrue(clone.permissionRequired());
     }
 
     @Test
@@ -95,7 +99,8 @@ class ScreenDefinitionTest {
                 7,
                 4,
                 BlockFace.SOUTH,
-                true
+                true,
+                false
         );
     }
 }

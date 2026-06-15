@@ -150,7 +150,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 width,
                 height,
                 facing,
-                getConfig().getBoolean("screen.auto-start", true)
+                getConfig().getBoolean("screen.auto-start", true),
+                false
         );
         if (!isScreenAllowed(definition)) {
             return false;
@@ -185,7 +186,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 source.width(),
                 source.height(),
                 facing,
-                source.enabled()
+                source.enabled(),
+                source.permissionRequired()
         );
         if (!isScreenAllowed(clone)) {
             return false;
@@ -326,6 +328,17 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         return enabled ? startScreen(id) : stopScreen(id);
     }
 
+    boolean setScreenPermissionRequired(String id, boolean permissionRequired) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        if (screen == null) {
+            return false;
+        }
+        updateDefinition(screen,
+                screen.definition().withPermissionRequired(permissionRequired));
+        refreshViewers();
+        return true;
+    }
+
     Component status() {
         if (screens.isEmpty()) {
             return messages.component("status.no-display");
@@ -364,6 +377,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 Map.entry("world", definition.world()),
                 Map.entry("facing", messages.direction(definition.facing())),
                 Map.entry("distance", String.format(Locale.ROOT, "%.1f", definition.distance())),
+                Map.entry("permission_required", definition.permissionRequired()),
+                Map.entry("view_permission", ScreenPermissions.viewNode(definition.id())),
                 Map.entry("shared", source == null ? 0 : source.screenCount()),
                 Map.entry("url", StreamUrlSanitizer.mask(definition.url()))
         ));
@@ -527,6 +542,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         config.set(path + ".height", definition.height());
         config.set(path + ".facing", definition.facing().name());
         config.set(path + ".enabled", definition.enabled());
+        config.set(path + ".permission-required", definition.permissionRequired());
     }
 
     private void loadScreens() {
@@ -559,7 +575,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                     getConfig().getInt(path + ".height", 4),
                     facing,
                     getConfig().getBoolean(path + ".enabled",
-                            getConfig().getBoolean("screen.auto-start", true))
+                            getConfig().getBoolean("screen.auto-start", true)),
+                    getConfig().getBoolean(path + ".permission-required", false)
             );
             if (world == null || facing == null || !isScreenAllowed(definition)
                     || definition.url().isBlank()) {
@@ -600,7 +617,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 ScreenPolicy.width(first, second, facing),
                 ScreenPolicy.height(first, second),
                 facing,
-                getConfig().getBoolean("screen.auto-start", true)
+                getConfig().getBoolean("screen.auto-start", true),
+                false
         );
         if (!isScreenAllowed(migrated)) {
             getLogger().warning(messages.plain("logs.saved-screen-too-large"));

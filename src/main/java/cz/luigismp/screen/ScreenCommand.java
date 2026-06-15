@@ -23,7 +23,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             "create", "clone", "list", "start", "stop", "remove",
             "status", "set", "reload", "debug", "mediamtx");
     private static final List<String> SET_PROPERTIES =
-            List.of("url", "fps", "distance", "enabled");
+            List.of("url", "fps", "distance", "enabled", "permission");
     private final LuigiScreenPlugin plugin;
 
     ScreenCommand(LuigiScreenPlugin plugin) {
@@ -38,7 +38,15 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        switch (args[0].toLowerCase(Locale.ROOT)) {
+        String subcommand = args[0].toLowerCase(Locale.ROOT);
+        if (SUBCOMMANDS.contains(subcommand)
+                && !ScreenPermissions.canUse(sender, subcommand)) {
+            message(sender, "commands.no-permission",
+                    "permission", ScreenPermissions.commandNode(subcommand));
+            return true;
+        }
+
+        switch (subcommand) {
             case "create" -> create(sender, args);
             case "clone" -> cloneScreen(sender, args);
             case "list" -> list(sender);
@@ -145,6 +153,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
                     "world", definition.world(),
                     "fps", format(definition.fps()),
                     "distance", format(definition.distance()),
+                    "permission_required", definition.permissionRequired(),
+                    "view_permission", ScreenPermissions.viewNode(definition.id()),
                     "url", StreamUrlSanitizer.mask(definition.url()));
         }
     }
@@ -237,6 +247,11 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             case "enabled" -> {
                 Boolean value = parseBoolean(args[3]);
                 changed = value != null && plugin.setScreenEnabled(id, value);
+            }
+            case "permission", "permission-required" -> {
+                Boolean value = parseBoolean(args[3]);
+                changed = value != null
+                        && plugin.setScreenPermissionRequired(id, value);
             }
             default -> {
                 message(sender, "commands.set-usage");
@@ -386,7 +401,9 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             @NotNull CommandSender sender, @NotNull Command command,
             @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return matching(SUBCOMMANDS, args[0]);
+            return matching(SUBCOMMANDS.stream()
+                    .filter(value -> ScreenPermissions.canUse(sender, value))
+                    .toList(), args[0]);
         }
         String subcommand = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2 && subcommand.equals("mediamtx")) {
@@ -404,7 +421,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             return matching(SET_PROPERTIES, args[2]);
         }
         if (args.length == 4 && subcommand.equals("set")
-                && args[2].equalsIgnoreCase("enabled")) {
+                && (args[2].equalsIgnoreCase("enabled")
+                || args[2].equalsIgnoreCase("permission"))) {
             return matching(List.of("true", "false"), args[3]);
         }
         return List.of();

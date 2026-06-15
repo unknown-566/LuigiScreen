@@ -6,7 +6,7 @@
 
     <groupId>cz.luigismp</groupId>
     <artifactId>luigiscreen</artifactId>
-    <version>1.1.0-alpha.8</version>
+    <version>1.1.0-alpha.9</version>
     <packaging>jar</packaging>
     <name>LuigiScreen</name>
     <description>A server-side Paper/Bukkit plugin for live RTMP video screens.</description>

@@ -11,9 +11,57 @@ commands:
     description: Manage the LuigiSMP live screen.
     aliases: [screen]
     usage: /screen <create|clone|list|start|stop|remove|status|set|reload|debug|mediamtx>
-    permission: luigiscreen.admin
 
 permissions:
   luigiscreen.admin:
-    description: Allows management of the live screen.
+    description: Grants every LuigiScreen command and access to protected screens.
     default: op
+    children:
+      luigiscreen.create: true
+      luigiscreen.clone: true
+      luigiscreen.list: true
+      luigiscreen.start: true
+      luigiscreen.stop: true
+      luigiscreen.remove: true
+      luigiscreen.status: true
+      luigiscreen.set: true
+      luigiscreen.reload: true
+      luigiscreen.debug: true
+      luigiscreen.mediamtx: true
+      luigiscreen.see.*: true
+  luigiscreen.create:
+    description: Allows creating screens.
+    default: false
+  luigiscreen.clone:
+    description: Allows cloning screens.
+    default: false
+  luigiscreen.list:
+    description: Allows listing configured screens.
+    default: false
+  luigiscreen.start:
+    description: Allows enabling screens.
+    default: false
+  luigiscreen.stop:
+    description: Allows disabling screens.
+    default: false
+  luigiscreen.remove:
+    description: Allows removing screens.
+    default: false
+  luigiscreen.status:
+    description: Allows viewing screen and stream status.
+    default: false
+  luigiscreen.set:
+    description: Allows changing per-screen settings.
+    default: false
+  luigiscreen.reload:
+    description: Allows reloading LuigiScreen.
+    default: false
+  luigiscreen.debug:
+    description: Allows viewing LuigiScreen debug statistics.
+    default: false
+  luigiscreen.mediamtx:
+    description: Allows generating MediaMTX configurations and credentials.
+    default: false
+  luigiscreen.see.*:
+    description: Allows viewing every permission-protected screen.
+    default: false
