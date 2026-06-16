@@ -20,6 +20,47 @@ sources:
   max-image-bytes: 16777216
   max-image-pixels: 16777216
 
+playback:
+  # Number-only durations are treated as seconds. Strings can use ms, s, m or h.
+  default-duration: 30s
+  tick-seconds: 1
+
+# Optional named rotations. Enable one on a screen with:
+# /screen playlist set <screen> <playlist>
+playlists:
+  example_rotation:
+    default-duration: 30s
+    items:
+      main_stream:
+        type: rtmp
+        value: "rtmp://127.0.0.1:55556/screen"
+        weight: 10
+        duration: 60s
+      random_media:
+        type: folder
+        folder: trailers
+        media-types: [video, image, gif]
+        weight: 3
+        duration: 20s
+        cooldown: 2m
+        conditions:
+          min-viewers: 1
+
+# Optional manual event scenes. Play one with:
+# /screen event play <screen> <event>
+events:
+  example_announcement:
+    priority: 50
+    sequence:
+      title:
+        type: text
+        text: "Announcement starts soon"
+        duration: 5s
+      trailer:
+        type: video
+        value: "trailers/announcement.mp4"
+        duration: 25s
+
 screen:
   # Defaults used by newly created screens and by the legacy config migration.
   auto-start: true

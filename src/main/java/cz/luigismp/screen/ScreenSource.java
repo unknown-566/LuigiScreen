@@ -4,9 +4,9 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Locale;
 
-record ScreenSource(SourceType type, String value) {
+public record ScreenSource(SourceType type, String value) {
 
-    ScreenSource {
+    public ScreenSource {
         type = type == null ? SourceType.RTMP : type;
         value = value == null ? "" : value.trim();
     }

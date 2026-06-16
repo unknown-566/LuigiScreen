@@ -3,7 +3,7 @@ package cz.luigismp.screen;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.BlockVector;
 
-final class ScreenPolicy {
+public final class ScreenPolicy {
 
     private ScreenPolicy() {
     }

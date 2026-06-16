@@ -51,7 +51,8 @@ class ScreenDefinitionTest {
                 original.height(),
                 BlockFace.WEST,
                 false,
-                true
+                true,
+                "rotation"
         );
 
         assertEquals(ScreenSourcePolicy.key(original.source()),
@@ -102,7 +103,8 @@ class ScreenDefinitionTest {
                 original.height(),
                 original.facing(),
                 false,
-                true
+                true,
+                "rotation"
         );
 
         assertTrue(original.hasSameDisplayGeometry(reloaded));
@@ -122,7 +124,8 @@ class ScreenDefinitionTest {
                 original.height(),
                 original.facing(),
                 original.enabled(),
-                original.permissionRequired()
+                original.permissionRequired(),
+                original.playlist()
         );
 
         assertFalse(original.hasSameDisplayGeometry(moved));
@@ -142,7 +145,8 @@ class ScreenDefinitionTest {
                 2,
                 BlockFace.NORTH,
                 false,
-                true
+                true,
+                "rotation"
         );
 
         ScreenDefinition merged = original.withRuntimeSettingsFrom(edited);
@@ -153,6 +157,7 @@ class ScreenDefinitionTest {
         assertEquals(edited.distance(), merged.distance());
         assertEquals(edited.enabled(), merged.enabled());
         assertEquals(edited.permissionRequired(), merged.permissionRequired());
+        assertEquals(edited.playlist(), merged.playlist());
     }
 
     private static ScreenDefinition screen(
@@ -168,7 +173,8 @@ class ScreenDefinitionTest {
                 4,
                 BlockFace.SOUTH,
                 true,
-                false
+                false,
+                ""
         );
     }
 }

@@ -2,7 +2,7 @@ package cz.luigismp.screen;
 
 import java.util.Locale;
 
-final class DebugText {
+public final class DebugText {
 
     private DebugText() {
     }

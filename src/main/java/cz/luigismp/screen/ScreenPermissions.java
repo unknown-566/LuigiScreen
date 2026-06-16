@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-final class ScreenPermissions {
+public final class ScreenPermissions {
 
     static final String ADMIN = "luigiscreen.admin";
     static final String SEE_ALL = "luigiscreen.see.*";
@@ -19,6 +19,8 @@ final class ScreenPermissions {
             Map.entry("remove", "luigiscreen.remove"),
             Map.entry("status", "luigiscreen.status"),
             Map.entry("source", "luigiscreen.source"),
+            Map.entry("playlist", "luigiscreen.playlist"),
+            Map.entry("event", "luigiscreen.event"),
             Map.entry("set", "luigiscreen.set"),
             Map.entry("reload", "luigiscreen.reload"),
             Map.entry("debug", "luigiscreen.debug"),

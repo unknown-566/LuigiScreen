@@ -3,7 +3,7 @@ package cz.luigismp.screen;
 import java.util.List;
 import java.util.Locale;
 
-enum SourceType {
+public enum SourceType {
     RTMP("rtmp", List.of("rtmps")),
     MJPEG("mjpeg", List.of("mjpg")),
     VIDEO("video", List.of("local-video")),

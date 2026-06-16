@@ -147,6 +147,18 @@ final class ManagedScreen {
         return receiverSnapshot.length;
     }
 
+    boolean hasViewerWithPermission(String permission) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        for (Player player : receiverSnapshot) {
+            if (player.hasPermission(permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     boolean hasViewers() {
         return receiverSnapshot.length > 0;
     }

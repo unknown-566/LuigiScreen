@@ -10,7 +10,7 @@ commands:
   luigiscreen:
     description: Manage LuigiScreen live screens.
     aliases: [screen]
-    usage: /screen <create|clone|list|start|stop|remove|status|source|set|reload|debug|mediamtx>
+    usage: /screen <create|clone|list|start|stop|remove|status|source|playlist|event|set|reload|debug|mediamtx>
 
 permissions:
   luigiscreen.admin:
@@ -25,6 +25,8 @@ permissions:
       luigiscreen.remove: true
       luigiscreen.status: true
       luigiscreen.source: true
+      luigiscreen.playlist: true
+      luigiscreen.event: true
       luigiscreen.set: true
       luigiscreen.reload: true
       luigiscreen.debug: true
@@ -53,6 +55,12 @@ permissions:
     default: false
   luigiscreen.source:
     description: Allows viewing and changing screen media sources.
+    default: false
+  luigiscreen.playlist:
+    description: Allows assigning and clearing screen playlists.
+    default: false
+  luigiscreen.event:
+    description: Allows playing and stopping screen events.
     default: false
   luigiscreen.set:
     description: Allows changing per-screen settings.

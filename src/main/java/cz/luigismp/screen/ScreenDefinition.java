@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-record ScreenDefinition(
+public record ScreenDefinition(
         String id,
         ScreenSource source,
         double fps,
@@ -18,16 +18,18 @@ record ScreenDefinition(
         int height,
         BlockFace facing,
         boolean enabled,
-        boolean permissionRequired
+        boolean permissionRequired,
+        String playlist
 ) {
 
     private static final Pattern VALID_ID = Pattern.compile("[a-z0-9_-]{1,32}");
 
-    ScreenDefinition {
+    public ScreenDefinition {
         id = normalizeId(id);
         source = source == null ? ScreenSource.rtmp("") : source;
         world = world == null ? "" : world.trim();
         location = location == null ? null : location.clone();
+        playlist = normalizeId(playlist);
         fps = Math.max(0.1, Math.min(20, fps));
         distance = Math.max(8, distance);
     }
@@ -42,27 +44,32 @@ record ScreenDefinition(
 
     ScreenDefinition withSource(ScreenSource value) {
         return new ScreenDefinition(id, value, fps, distance, world, location,
-                width, height, facing, enabled, permissionRequired);
+                width, height, facing, enabled, permissionRequired, playlist);
     }
 
     ScreenDefinition withFps(double value) {
         return new ScreenDefinition(id, source, value, distance, world, location,
-                width, height, facing, enabled, permissionRequired);
+                width, height, facing, enabled, permissionRequired, playlist);
     }
 
     ScreenDefinition withDistance(double value) {
         return new ScreenDefinition(id, source, fps, value, world, location,
-                width, height, facing, enabled, permissionRequired);
+                width, height, facing, enabled, permissionRequired, playlist);
     }
 
     ScreenDefinition withEnabled(boolean value) {
         return new ScreenDefinition(id, source, fps, distance, world, location,
-                width, height, facing, value, permissionRequired);
+                width, height, facing, value, permissionRequired, playlist);
     }
 
     ScreenDefinition withPermissionRequired(boolean value) {
         return new ScreenDefinition(id, source, fps, distance, world, location,
-                width, height, facing, enabled, value);
+                width, height, facing, enabled, value, playlist);
+    }
+
+    ScreenDefinition withPlaylist(String value) {
+        return new ScreenDefinition(id, source, fps, distance, world, location,
+                width, height, facing, enabled, permissionRequired, value);
     }
 
     boolean hasSameDisplayGeometry(ScreenDefinition other) {
@@ -86,7 +93,8 @@ record ScreenDefinition(
                 height,
                 facing,
                 other.enabled,
-                other.permissionRequired
+                other.permissionRequired,
+                other.playlist
         );
     }
 

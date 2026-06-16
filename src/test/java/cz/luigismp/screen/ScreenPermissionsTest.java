@@ -29,6 +29,8 @@ class ScreenPermissionsTest {
                 Map.entry("remove", "luigiscreen.remove"),
                 Map.entry("status", "luigiscreen.status"),
                 Map.entry("source", "luigiscreen.source"),
+                Map.entry("playlist", "luigiscreen.playlist"),
+                Map.entry("event", "luigiscreen.event"),
                 Map.entry("set", "luigiscreen.set"),
                 Map.entry("reload", "luigiscreen.reload"),
                 Map.entry("debug", "luigiscreen.debug"),
@@ -60,6 +62,10 @@ class ScreenPermissionsTest {
                 "permissions.luigiscreen.admin.children.luigiscreen.create"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.source"));
+        assertTrue(plugin.getBoolean(
+                "permissions.luigiscreen.admin.children.luigiscreen.playlist"));
+        assertTrue(plugin.getBoolean(
+                "permissions.luigiscreen.admin.children.luigiscreen.event"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.see.*"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.create.default"));
@@ -93,7 +99,8 @@ class ScreenPermissionsTest {
                 4,
                 org.bukkit.block.BlockFace.NORTH,
                 true,
-                permissionRequired
+                permissionRequired,
+                ""
         );
     }
 

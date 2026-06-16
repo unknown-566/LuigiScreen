@@ -3,7 +3,7 @@ package cz.luigismp.screen;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-final class MediaMtxConfigGenerator {
+public final class MediaMtxConfigGenerator {
 
     private MediaMtxConfigGenerator() {
     }

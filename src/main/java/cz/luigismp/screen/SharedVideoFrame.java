@@ -3,7 +3,7 @@ package cz.luigismp.screen;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.atomic.AtomicInteger;
 
-final class SharedVideoFrame {
+public final class SharedVideoFrame {
 
     private final BufferedImage image;
     private final AtomicInteger references = new AtomicInteger(1);

@@ -2,7 +2,7 @@ package cz.luigismp.screen;
 
 import java.util.Collection;
 
-final class ScreenSourcePolicy {
+public final class ScreenSourcePolicy {
 
     private ScreenSourcePolicy() {
     }

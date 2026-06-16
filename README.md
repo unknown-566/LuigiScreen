@@ -16,6 +16,9 @@ renders it through MapEngine. Players do not need a client mod.
 - RTMP and MJPEG live streams
 - Looping local videos and GIFs
 - Local and URL images
+- Per-screen playlists with weighted random media rotation
+- Manual event scenes that temporarily interrupt normal playback
+- Random media folders for videos, images and GIFs
 - Multiple named screens with independent settings
 - Shared decoding/loading for screens using the same source type and value
 - Configurable dimensions, locations and orientation
@@ -77,6 +80,8 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show the registry summary or detailed screen state |
 | `/screen source <name> <type> <value>` | Switch RTMP, MJPEG, video, image, URL image or GIF |
+| `/screen playlist list|set|clear ...` | Assign or clear a configured media playlist |
+| `/screen event list|play|stop ...` | Play or stop a configured manual event scene |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Change an independent screen setting |
 | `/screen reload` | Reload configuration and localization without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
@@ -109,7 +114,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 44 automated tests covering:
+The current suite contains 46 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -123,6 +128,7 @@ The current suite contains 44 automated tests covering:
 - Per-screen visibility permission naming and defaults
 - MediaMTX generation
 - Localization files and debug text formatting
+- Duration parsing for playlist and event timing
 
 ## Platform limits
 
@@ -132,10 +138,11 @@ support ARM, macOS or Folia.
 The default per-screen limit is 10x6 maps and 60 maps. Larger screens can
 consume substantial CPU, memory and network bandwidth.
 
-Each screen stores its own `source.type`, `source.value`, `fps`, `distance`, `world`, `location`,
-`width`, `height`, `enabled` and `permission-required` value. Screens with the
-exact same normalized source type and value automatically use one loader and
-independently render the shared latest frame.
+Each screen stores its own `source.type`, `source.value`, `playlist`, `fps`,
+`distance`, `world`, `location`, `width`, `height`, `enabled` and
+`permission-required` value. Screens with the exact same active source type and
+value automatically use one loader and independently render the shared latest
+frame.
 
 ## Media sources
 
@@ -152,6 +159,52 @@ Relative local paths are resolved inside `plugins/LuigiScreen/media/`.
 
 Local videos and GIFs loop automatically. Existing `url:` config entries and
 `/screen set <name> url ...` remain supported as legacy RTMP syntax.
+
+## Playlists and events
+
+Playlists and events are defined in `config.yml`.
+
+```yaml
+playlists:
+  spawn_rotation:
+    items:
+      stream:
+        type: rtmp
+        value: "rtmp://127.0.0.1:55556/screen"
+        weight: 10
+        duration: 60s
+      random_media:
+        type: folder
+        folder: trailers
+        media-types: [video, image, gif]
+        weight: 3
+        duration: 20s
+        cooldown: 2m
+
+events:
+  update_reveal:
+    sequence:
+      title:
+        type: text
+        text: "Update starts soon"
+        duration: 5s
+      trailer:
+        type: video
+        value: "trailers/update.mp4"
+        duration: 30s
+```
+
+Use them with:
+
+```text
+/screen playlist set main spawn_rotation
+/screen event play main update_reveal
+/screen event stop main
+```
+
+When two screens select the same active source, LuigiScreen still shares one
+loader. Text event steps render an internal LuigiScreen frame and then return to
+the configured playlist or fallback source.
 
 ## Free and Plus editions
 

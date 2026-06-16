@@ -21,7 +21,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "create", "clone", "list", "start", "stop", "remove",
-            "status", "source", "set", "reload", "debug", "mediamtx");
+            "status", "source", "playlist", "event", "set", "reload", "debug", "mediamtx");
     private static final List<String> SET_PROPERTIES =
             List.of("url", "fps", "distance", "enabled", "permission");
     private final LuigiScreenPlugin plugin;
@@ -55,6 +55,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             case "remove" -> remove(sender, args);
             case "status" -> status(sender, args);
             case "source" -> source(sender, args);
+            case "playlist" -> playlist(sender, args);
+            case "event" -> event(sender, args);
             case "set" -> set(sender, args);
             case "debug" -> debug(sender);
             case "mediamtx" -> mediaMtx(sender, args);
@@ -156,16 +158,20 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
                     "distance", format(definition.distance()),
                     "permission_required", definition.permissionRequired(),
                     "view_permission", ScreenPermissions.viewNode(definition.id()),
-                    "source_type", definition.source().type().id(),
-                    "source_value", definition.source().displayValue());
+                    "source_type", plugin.activeSource(id).type().id(),
+                    "source_value", plugin.activeSource(id).displayValue(),
+                    "playlist", definition.playlist().isBlank()
+                            ? plugin.messages().plain("common.none") : definition.playlist(),
+                    "playback", plugin.playbackDescription(id));
         }
     }
 
     private int uniqueSourceCount(List<String> ids) {
-        List<ScreenDefinition> definitions = ids.stream()
-                .map(plugin::screenDefinition)
-                .toList();
-        return (int) ScreenSourcePolicy.uniqueSourceCount(definitions);
+        return (int) ids.stream()
+                .map(plugin::activeSource)
+                .map(ScreenSourcePolicy::key)
+                .distinct()
+                .count();
     }
 
     private void start(CommandSender sender, String[] args) {
@@ -235,10 +241,11 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (args.length == 2) {
+            ScreenSource activeSource = plugin.activeSource(id);
             message(sender, "commands.source-current",
                     "screen", id,
-                    "type", definition.source().type().id(),
-                    "value", definition.source().displayValue());
+                    "type", activeSource.type().id(),
+                    "value", activeSource.displayValue());
             return;
         }
         if (args[2].equalsIgnoreCase("types")) {
@@ -272,6 +279,88 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
                         "folder", plugin.mediaDirectoryDisplay());
             }
         }
+    }
+
+    private void playlist(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list")) {
+            List<String> playlists = plugin.playlistIds();
+            message(sender, playlists.isEmpty()
+                    ? "commands.playlist-empty" : "commands.playlist-list",
+                    "playlists", String.join(", ", playlists));
+            return;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("set")) {
+            if (args.length < 4) {
+                message(sender, "commands.playlist-usage");
+                return;
+            }
+            String screen = ScreenDefinition.normalizeId(args[2]);
+            String playlist = ScreenDefinition.normalizeId(args[3]);
+            if (plugin.setScreenPlaylist(screen, playlist)) {
+                message(sender, "commands.playlist-set",
+                        "screen", screen, "playlist", playlist);
+            } else {
+                message(sender, "commands.playlist-failed",
+                        "screen", screen, "playlist", playlist);
+            }
+            return;
+        }
+        if (action.equals("clear")) {
+            if (args.length < 3) {
+                message(sender, "commands.playlist-usage");
+                return;
+            }
+            String screen = ScreenDefinition.normalizeId(args[2]);
+            if (plugin.clearScreenPlaylist(screen)) {
+                message(sender, "commands.playlist-cleared", "screen", screen);
+            } else {
+                message(sender, "commands.playlist-clear-failed", "screen", screen);
+            }
+            return;
+        }
+        message(sender, "commands.playlist-usage");
+    }
+
+    private void event(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list")) {
+            List<String> events = plugin.eventIds();
+            message(sender, events.isEmpty()
+                    ? "commands.event-empty" : "commands.event-list",
+                    "events", String.join(", ", events));
+            return;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("play")) {
+            if (args.length < 4) {
+                message(sender, "commands.event-usage");
+                return;
+            }
+            String screen = ScreenDefinition.normalizeId(args[2]);
+            String event = ScreenDefinition.normalizeId(args[3]);
+            if (plugin.playScreenEvent(screen, event)) {
+                message(sender, "commands.event-started",
+                        "screen", screen, "event", event);
+            } else {
+                message(sender, "commands.event-failed",
+                        "screen", screen, "event", event);
+            }
+            return;
+        }
+        if (action.equals("stop")) {
+            if (args.length < 3) {
+                message(sender, "commands.event-usage");
+                return;
+            }
+            String screen = ScreenDefinition.normalizeId(args[2]);
+            if (plugin.stopScreenEvent(screen)) {
+                message(sender, "commands.event-stopped", "screen", screen);
+            } else {
+                message(sender, "commands.event-stop-failed", "screen", screen);
+            }
+            return;
+        }
+        message(sender, "commands.event-usage");
     }
 
     private void set(CommandSender sender, String[] args) {
@@ -387,6 +476,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         message(sender, "commands.help-clone");
         message(sender, "commands.help-control");
         message(sender, "commands.help-source");
+        message(sender, "commands.help-playback");
         message(sender, "commands.help-set");
         message(sender, "commands.help-debug");
         message(sender, "commands.help-mediamtx",
@@ -476,6 +566,28 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             List<String> types = new ArrayList<>(SourceType.commandNames());
             types.add("types");
             return matching(types, args[2]);
+        }
+        if (args.length == 2 && subcommand.equals("playlist")) {
+            return matching(List.of("list", "set", "clear"), args[1]);
+        }
+        if (args.length == 3 && subcommand.equals("playlist")
+                && List.of("set", "clear").contains(args[1].toLowerCase(Locale.ROOT))) {
+            return matching(plugin.screenIds(), args[2]);
+        }
+        if (args.length == 4 && subcommand.equals("playlist")
+                && args[1].equalsIgnoreCase("set")) {
+            return matching(plugin.playlistIds(), args[3]);
+        }
+        if (args.length == 2 && subcommand.equals("event")) {
+            return matching(List.of("list", "play", "stop"), args[1]);
+        }
+        if (args.length == 3 && subcommand.equals("event")
+                && List.of("play", "stop").contains(args[1].toLowerCase(Locale.ROOT))) {
+            return matching(plugin.screenIds(), args[2]);
+        }
+        if (args.length == 4 && subcommand.equals("event")
+                && args[1].equalsIgnoreCase("play")) {
+            return matching(plugin.eventIds(), args[3]);
         }
         if (args.length == 3 && subcommand.equals("set")) {
             return matching(SET_PROPERTIES, args[2]);
