@@ -12,7 +12,7 @@ This file is the source of truth for the LuigiScreen Modrinth page.
 
 **Summary:**
 
-> A server-side Paper/Bukkit plugin for streams, videos, images and GIFs on configurable Minecraft map screens.
+> A server-side Paper/Bukkit plugin for live streams, videos, images, GIFs, playlists and event scenes on Minecraft map screens.
 
 **Recommended categories:**
 
@@ -64,7 +64,8 @@ https://modrinth.com/plugin/mapengine
 # Turn a Minecraft wall into a media screen
 
 LuigiScreen is a server-side Paper/Bukkit plugin that displays live streams,
-videos, images and GIFs across configurable walls of Minecraft maps.
+videos, images, GIFs, playlists and event scenes across configurable walls of
+Minecraft maps.
 
 Select an RTMP or MJPEG stream, a local video, a local or remote image, or an
 animated GIF. LuigiScreen loads the latest frame and MapEngine renders it for
@@ -77,6 +78,9 @@ No client mod is required. Players join with a normal Minecraft client.
 - RTMP and MJPEG live streams
 - Looping local videos and GIFs
 - Local and URL images
+- Per-screen playlists with weighted random media rotation
+- Manual event scenes that temporarily interrupt normal playback
+- Random media folder items for videos, images and GIFs
 - Multiple named screens with independent settings
 - One shared loader for screens using the same source type and value
 - Configurable screen dimensions, worlds, locations and orientation
@@ -122,6 +126,28 @@ Relative local paths use `plugins/LuigiScreen/media/`. Screens using the same
 source type and value share one loader while keeping independent FPS,
 distance, location, dimensions and permissions.
 
+## Playlists and events
+
+Screens can also run configured playlists:
+
+```text
+/screen playlist set main spawn_rotation
+```
+
+Playlist items can use RTMP, MJPEG, video, image, URL image, GIF, text frames
+or a random folder of local media files. Items support weights, durations,
+cooldowns and simple conditions such as viewer count, online players, viewer
+permission and TPS.
+
+Manual event scenes can interrupt the normal playlist and then return to it:
+
+```text
+/screen event play main update_reveal
+```
+
+Events are useful for announcements, update reveals, countdowns or temporary
+live streams.
+
 For RTMP, MediaMTX and OBS do not have to run on the Minecraft server computer.
 LuigiScreen includes guided setup profiles for the same computer, LAN, public
 IP, VPN and external hosting.
@@ -159,6 +185,8 @@ before exposing MediaMTX to the internet.
 | `/screen remove <name>` | Remove one screen |
 | `/screen status [name]` | Show registry or detailed screen state |
 | `/screen source <name> <type> <value>` | Switch RTMP, MJPEG, video, image, URL image or GIF |
+| `/screen playlist list\|set\|clear ...` | Assign or clear configured media playlists |
+| `/screen event list\|play\|stop ...` | Play or stop configured manual event scenes |
 | `/screen set <name> <url\|fps\|distance\|enabled\|permission> <value>` | Update one screen |
 | `/screen reload` | Reload configuration without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
@@ -189,6 +217,7 @@ screen because their sizes, FPS and viewers may differ.
 - MediaMTX and OBS remain separate applications when RTMP is used
 - A publisher must stay online for live RTMP capture
 - URL images are loaded once after a successful request
+- Events are manual commands in this alpha; automatic triggers are planned later
 
 ## Alpha notice
 
@@ -207,9 +236,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.12`
+**Version number:** `1.1.0-alpha.13`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.12`
+**Version title:** `LuigiScreen 1.1.0-alpha.13`
 
 **Release channel:** Alpha
 
@@ -222,15 +251,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.12.jar
+LuigiScreen-1.1.0-alpha.13.jar
 ```
 
-**File size:** 55,270,230 bytes
+**File size:** 55,294,941 bytes
 
 **SHA-256:**
 
 ```text
-1CD87280FE1AAEBCCA589191E462964863D9F889098C30C34FA0FCECF41F6EAF
+35E48737DB370CC9C83D3FC455AD929444EAA2E8E53A07C940505BA390B1E409
 ```
 
 **Dependency:**
@@ -240,19 +269,20 @@ LuigiScreen-1.1.0-alpha.12.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.12
+## LuigiScreen 1.1.0-alpha.13
 
 ### Highlights
 
-- Added RTMP, MJPEG, local video, local image, URL image and GIF sources
-- Added `/screen source <name> <type> <value>`
-- Added safe local media paths under `plugins/LuigiScreen/media/`
-- Added looping video and GIF playback
-- Added shared loading by normalized source type and value
-- Added automatic migration from old RTMP `url:` entries
-- Added `luigiscreen.source`
-- Kept fully non-destructive `/screen reload`
-- 44 automated tests
+- Added per-screen playlists with weighted random media rotation
+- Added `/screen playlist list`, `/screen playlist set <screen> <playlist>` and `/screen playlist clear <screen>`
+- Added manual event scenes with ordered sequences
+- Added `/screen event list`, `/screen event play <screen> <event>` and `/screen event stop <screen>`
+- Added random folder items for local videos, images and GIFs
+- Added `duration` and `cooldown` parsing with `ms`, `s`, `m` and `h` units
+- Added basic playback conditions: `min-online`, `min-viewers`, `viewer-permission` and `tps-above`
+- Kept configured screen sources as fallback sources while playlist/event runtime switches stay non-persistent
+- Added `luigiscreen.playlist` and `luigiscreen.event`
+- 46 automated tests
 
 ### Platform support
 
@@ -267,6 +297,7 @@ LuigiScreen-1.1.0-alpha.12.jar
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
 - MediaMTX and a publisher are only required for RTMP
+- Events are manual commands in this alpha; automatic triggers are planned later
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
 Read the [installation guide](https://unknown-56-works.gitbook.io/luigiscreen/getting-started/installation) before installing.
@@ -282,7 +313,7 @@ Recommended gallery images:
 2. `OBS to Minecraft` - OBS preview beside the matching in-game screen.
 3. `Debug statistics` - The boss bar and sidebar during an active stream.
 4. `Large screen` - A safe larger display showing the configurable dimensions.
-5. `MediaMTX setup` - The guided `/screen mediamtx` workflow without credentials.
+5. `Playlist/event demo` - A screen showing an announcement or rotating media.
 
 Recommended image title and caption:
 
@@ -325,7 +356,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.12` uploaded as Alpha
+- [ ] `1.1.0-alpha.13` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible
