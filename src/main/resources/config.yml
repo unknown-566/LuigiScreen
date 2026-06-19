@@ -6,6 +6,8 @@ stream:
   fps: 8
   reconnect-delay-seconds: 3
   reconnect-max-delay-seconds: 30
+  # Maximum time FFmpeg may wait for remote network input.
+  io-timeout-seconds: 5
 
 source:
   # Default source assigned to newly created screens.
@@ -107,6 +109,8 @@ performance:
   pause-rendering-without-viewers: true
   # Delta frames need an additional full-size memory buffer.
   delta-updates-max-maps: 256
+  # Must be longer than stream.io-timeout-seconds for safe decoder shutdown.
+  worker-stop-timeout-seconds: 8
 
 logging:
   # FFmpeg uses a process-wide log level shared with other JavaCV plugins.

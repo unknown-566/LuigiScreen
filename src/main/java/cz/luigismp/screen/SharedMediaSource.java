@@ -9,12 +9,15 @@ final class SharedMediaSource {
 
     private final LuigiScreenPlugin plugin;
     private final ScreenSource source;
+    private final boolean pauseWithoutViewers;
     private final CopyOnWriteArraySet<ManagedScreen> screens = new CopyOnWriteArraySet<>();
     private volatile SourceWorker worker;
 
     SharedMediaSource(LuigiScreenPlugin plugin, ScreenSource source) {
         this.plugin = plugin;
         this.source = source;
+        this.pauseWithoutViewers = plugin.getConfig().getBoolean(
+                "performance.pause-rendering-without-viewers", true);
     }
 
     ScreenSource source() {
@@ -49,16 +52,13 @@ final class SharedMediaSource {
         if (!hasEnabledScreens()) {
             return false;
         }
-        if (!plugin.getConfig().getBoolean(
-                "performance.pause-rendering-without-viewers", true)) {
+        if (!pauseWithoutViewers) {
             return true;
         }
         return screens.stream().anyMatch(screen -> screen.enabled() && screen.hasViewers());
     }
 
     double targetFps() {
-        boolean pauseWithoutViewers = plugin.getConfig().getBoolean(
-                "performance.pause-rendering-without-viewers", true);
         return screens.stream()
                 .filter(screen -> screen.enabled()
                         && (!pauseWithoutViewers || screen.hasViewers()))
@@ -67,7 +67,7 @@ final class SharedMediaSource {
                 .orElse(0.1);
     }
 
-    boolean start() {
+    synchronized boolean start() {
         if (!hasEnabledScreens()) {
             return false;
         }
@@ -86,13 +86,16 @@ final class SharedMediaSource {
                     this,
                     source,
                     plugin.getConfig().getInt("stream.reconnect-delay-seconds", 3),
-                    plugin.getConfig().getInt("stream.reconnect-max-delay-seconds", 30)
+                    plugin.getConfig().getInt("stream.reconnect-max-delay-seconds", 30),
+                    plugin.getConfig().getLong("stream.io-timeout-seconds", 5),
+                    plugin.getConfig().getLong(
+                            "performance.worker-stop-timeout-seconds", 8)
             );
         }
         return new ImageSourceWorker(plugin, this, source);
     }
 
-    boolean stop() {
+    synchronized boolean stop() {
         SourceWorker current = worker;
         if (current == null) {
             return true;

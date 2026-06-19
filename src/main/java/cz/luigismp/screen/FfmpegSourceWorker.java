@@ -21,6 +21,8 @@ final class FfmpegSourceWorker implements SourceWorker {
     private final ScreenSource source;
     private final int reconnectDelaySeconds;
     private final int reconnectMaxDelaySeconds;
+    private final long ioTimeoutSeconds;
+    private final long stopTimeoutSeconds;
     private final AtomicBoolean running = new AtomicBoolean();
     private final AtomicBoolean terminated = new AtomicBoolean(true);
     private final AtomicReference<String> state = new AtomicReference<>("stopped");
@@ -34,13 +36,16 @@ final class FfmpegSourceWorker implements SourceWorker {
 
     FfmpegSourceWorker(LuigiScreenPlugin plugin, SharedMediaSource sharedSource,
                        ScreenSource source, int reconnectDelaySeconds,
-                       int reconnectMaxDelaySeconds) {
+                       int reconnectMaxDelaySeconds, long ioTimeoutSeconds,
+                       long stopTimeoutSeconds) {
         this.plugin = plugin;
         this.sharedSource = sharedSource;
         this.source = source;
         this.reconnectDelaySeconds = Math.max(1, reconnectDelaySeconds);
         this.reconnectMaxDelaySeconds =
                 Math.max(this.reconnectDelaySeconds, reconnectMaxDelaySeconds);
+        this.ioTimeoutSeconds = Math.max(1, ioTimeoutSeconds);
+        this.stopTimeoutSeconds = Math.max(1, stopTimeoutSeconds);
     }
 
     @Override
@@ -72,7 +77,8 @@ final class FfmpegSourceWorker implements SourceWorker {
 
         boolean stopped = false;
         try {
-            stopped = currentExecutor.awaitTermination(4, TimeUnit.SECONDS);
+            stopped = currentExecutor.awaitTermination(
+                    stopTimeoutSeconds, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
@@ -182,7 +188,7 @@ final class FfmpegSourceWorker implements SourceWorker {
                     if (!sleepMillis(TimeUnit.SECONDS.toMillis(retryDelay))) {
                         break;
                     }
-                    retryDelay = Math.min(reconnectMaxDelaySeconds, retryDelay * 2);
+                    retryDelay = nextRetryDelay(retryDelay, reconnectMaxDelaySeconds);
                 }
             }
         } finally {
@@ -218,6 +224,7 @@ final class FfmpegSourceWorker implements SourceWorker {
             long nextPublish = System.nanoTime();
             long playbackStarted = 0;
             long firstTimestamp = -1;
+            boolean loopSeekPending = false;
 
             while (running.get()) {
                 if (!sharedSource.shouldDecode()) {
@@ -228,6 +235,13 @@ final class FfmpegSourceWorker implements SourceWorker {
 
                 Frame frame = grabber.grabImage();
                 if (frame == null) {
+                    if (source.type().loopsAtEnd() && !loopSeekPending) {
+                        grabber.setTimestamp(0);
+                        firstTimestamp = -1;
+                        playbackStarted = 0;
+                        loopSeekPending = true;
+                        continue;
+                    }
                     if (source.type().loopsAtEnd()) {
                         return ReceiveResult.LOOP;
                     }
@@ -236,6 +250,7 @@ final class FfmpegSourceWorker implements SourceWorker {
                 if (frame.image == null || frame.imageWidth <= 0 || frame.imageHeight <= 0) {
                     continue;
                 }
+                loopSeekPending = false;
 
                 if (source.type().loopsAtEnd() && frame.timestamp >= 0) {
                     if (firstTimestamp < 0) {
@@ -273,8 +288,13 @@ final class FfmpegSourceWorker implements SourceWorker {
         if (source.usesRemoteLocation()) {
             grabber.setOption("analyzeduration", "10000000");
             grabber.setOption("probesize", "10000000");
-            grabber.setOption("rw_timeout", "5000000");
+            grabber.setOption("rw_timeout", Long.toString(
+                    TimeUnit.SECONDS.toMicros(ioTimeoutSeconds)));
         }
+    }
+
+    private static int nextRetryDelay(int current, int maximum) {
+        return current >= maximum / 2 ? maximum : Math.min(maximum, current * 2);
     }
 
     private boolean sleepUntil(long targetNanos) {

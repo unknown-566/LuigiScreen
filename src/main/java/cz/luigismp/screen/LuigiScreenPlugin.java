@@ -54,12 +54,15 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     private BukkitTask viewerTask;
     private BukkitTask streamRestartTask;
     private ScheduledExecutorService renderExecutor;
+    private volatile Path configuredMediaDirectory;
+    private volatile boolean allowAbsoluteMediaPaths;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         getConfig().options().copyDefaults(true);
         saveConfig();
+        reloadRuntimeSettings();
         createMediaDirectory();
         messages = new LocalizationManager(this);
         messages.load();
@@ -85,8 +88,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         saveConfig();
         startRenderExecutor();
         viewerTask = Bukkit.getScheduler().runTaskTimer(this, this::refreshViewers, 20L, 20L);
-        startEnabledSources();
         playbackController.reload();
+        playbackController.activate();
+        startEnabledSources();
         playbackController.start();
     }
 
@@ -172,6 +176,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             return false;
         }
         persist(definition);
+        saveConfig();
         ManagedScreen screen = register(definition, world);
         screen.showOfflineFrame(messages.plain(
                 definition.enabled() ? "screen.connecting" : "screen.stopped"));
@@ -209,6 +214,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             return false;
         }
         persist(clone);
+        saveConfig();
         ManagedScreen screen = register(clone, world);
         screen.showOfflineFrame(messages.plain(
                 clone.enabled() ? "screen.connecting" : "screen.stopped"));
@@ -245,7 +251,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         if (screen == null) {
             return false;
         }
-        updateDefinition(screen, screen.definition().withEnabled(true));
+        if (!screen.enabled()) {
+            updateDefinition(screen, screen.definition().withEnabled(true));
+        }
         screen.showOfflineFrame(messages.plain("screen.connecting"));
         if (playbackController != null) {
             playbackController.resetRuntime(screen.id());
@@ -260,7 +268,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             return false;
         }
         SharedMediaSource source = attachedSource(screen);
-        updateDefinition(screen, screen.definition().withEnabled(false));
+        if (screen.enabled()) {
+            updateDefinition(screen, screen.definition().withEnabled(false));
+        }
         screen.showOfflineFrame(messages.plain("screen.stopped"));
         return source == null || source.hasEnabledScreens() || source.stop();
     }
@@ -270,13 +280,16 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         for (String id : screenIds()) {
             ManagedScreen screen = screens.get(id);
             if (screen != null && !screen.enabled()) {
-                updateDefinition(screen, screen.definition().withEnabled(true));
+                applyDefinition(screen, screen.definition().withEnabled(true));
                 screen.showOfflineFrame(messages.plain("screen.connecting"));
                 if (playbackController != null) {
                     playbackController.resetRuntime(screen.id());
                 }
                 changed++;
             }
+        }
+        if (changed > 0) {
+            saveConfig();
         }
         startEnabledSources();
         return changed;
@@ -287,10 +300,13 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         for (String id : screenIds()) {
             ManagedScreen screen = screens.get(id);
             if (screen != null && screen.enabled()) {
-                updateDefinition(screen, screen.definition().withEnabled(false));
+                applyDefinition(screen, screen.definition().withEnabled(false));
                 screen.showOfflineFrame(messages.plain("screen.stopped"));
                 changed++;
             }
+        }
+        if (changed > 0) {
+            saveConfig();
         }
         requestStopAllSources();
         stopAllSources();
@@ -440,6 +456,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             reloadConfig();
             getConfig().options().copyDefaults(true);
             saveConfig();
+            reloadRuntimeSettings();
             createMediaDirectory();
             messages.load();
             configureFfmpegLogging();
@@ -448,11 +465,12 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             saveConfig();
             startRenderExecutor();
             scheduleViewerRefresh();
-            startEnabledSources();
             if (playbackController != null) {
                 playbackController.reload();
+                playbackController.activate();
                 playbackController.start();
             }
+            startEnabledSources();
             if (debugBossBars != null) {
                 debugBossBars.start();
             }
@@ -747,9 +765,13 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private void updateDefinition(ManagedScreen screen, ScreenDefinition definition) {
+        applyDefinition(screen, definition);
+        saveConfig();
+    }
+
+    private void applyDefinition(ManagedScreen screen, ScreenDefinition definition) {
         screen.updateDefinition(definition);
         persist(definition);
-        saveConfig();
     }
 
     private void persist(ScreenDefinition definition) {
@@ -918,8 +940,11 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private void refreshViewers() {
+        List<ViewerPosition> onlinePlayers = Bukkit.getOnlinePlayers().stream()
+                .map(ViewerPosition::capture)
+                .toList();
         for (ManagedScreen screen : screens.values()) {
-            screen.refreshViewers();
+            screen.refreshViewers(onlinePlayers);
         }
     }
 
@@ -991,7 +1016,14 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         renderExecutor.scheduleWithFixedDelay(() -> {
             long now = System.nanoTime();
             for (ManagedScreen screen : screens.values()) {
-                screen.flushPendingFrame(now);
+                try {
+                    screen.flushPendingFrame(now);
+                } catch (Throwable throwable) {
+                    getLogger().severe(messages.plain(
+                            "logs.render-failed-screen",
+                            "screen", screen.id(),
+                            "error", StreamUrlSanitizer.maskError(throwable)));
+                }
             }
         }, 0, 50, TimeUnit.MILLISECONDS);
     }
@@ -1057,7 +1089,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
         Path configured = Path.of(source.value());
         if (configured.isAbsolute()) {
-            if (!getConfig().getBoolean("sources.allow-absolute-paths", false)) {
+            if (!allowAbsoluteMediaPaths) {
                 throw new IOException("absolute media paths are disabled");
             }
             Path normalized = configured.normalize();
@@ -1103,9 +1135,11 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     }
 
     private Path mediaDirectory() {
-        return getDataFolder().toPath().resolve(
-                getConfig().getString("sources.media-directory", "media"))
-                .toAbsolutePath().normalize();
+        Path current = configuredMediaDirectory;
+        if (current != null) {
+            return current;
+        }
+        return getDataFolder().toPath().resolve("media").toAbsolutePath().normalize();
     }
 
     String mediaDirectoryDisplay() {
@@ -1120,6 +1154,21 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             throw new IllegalStateException("Could not create LuigiScreen media directory",
                     exception);
         }
+    }
+
+    private void reloadRuntimeSettings() {
+        Path dataFolder = getDataFolder().toPath().toAbsolutePath().normalize();
+        String configured = getConfig().getString("sources.media-directory", "media");
+        try {
+            Path value = Path.of(configured == null || configured.isBlank()
+                    ? "media" : configured.trim());
+            configuredMediaDirectory = (value.isAbsolute()
+                    ? value : dataFolder.resolve(value)).toAbsolutePath().normalize();
+        } catch (RuntimeException ignored) {
+            configuredMediaDirectory = dataFolder.resolve("media").normalize();
+        }
+        allowAbsoluteMediaPaths = getConfig().getBoolean(
+                "sources.allow-absolute-paths", false);
     }
 
     private static String sourceKey(ScreenSource source) {

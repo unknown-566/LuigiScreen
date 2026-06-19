@@ -11,7 +11,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +24,12 @@ final class ImageSourceWorker implements SourceWorker {
     private final LuigiScreenPlugin plugin;
     private final SharedMediaSource sharedSource;
     private final ScreenSource source;
+    private final int reconnectDelaySeconds;
+    private final int reconnectMaxDelaySeconds;
+    private final int httpTimeoutMillis;
+    private final int maxImageBytes;
+    private final long maxImagePixels;
+    private final long stopTimeoutSeconds;
     private final AtomicBoolean running = new AtomicBoolean();
     private final AtomicBoolean terminated = new AtomicBoolean(true);
     private final AtomicReference<String> state = new AtomicReference<>("stopped");
@@ -40,6 +45,19 @@ final class ImageSourceWorker implements SourceWorker {
         this.plugin = plugin;
         this.sharedSource = sharedSource;
         this.source = source;
+        this.reconnectDelaySeconds = Math.max(1, plugin.getConfig().getInt(
+                "stream.reconnect-delay-seconds", 3));
+        this.reconnectMaxDelaySeconds = Math.max(reconnectDelaySeconds,
+                plugin.getConfig().getInt("stream.reconnect-max-delay-seconds", 30));
+        long configuredTimeoutMillis = TimeUnit.SECONDS.toMillis(Math.max(1,
+                plugin.getConfig().getInt("sources.http-timeout-seconds", 10)));
+        this.httpTimeoutMillis = (int) Math.min(Integer.MAX_VALUE, configuredTimeoutMillis);
+        this.maxImageBytes = Math.max(1, plugin.getConfig().getInt(
+                "sources.max-image-bytes", 16 * 1024 * 1024));
+        this.maxImagePixels = Math.max(1, plugin.getConfig().getLong(
+                "sources.max-image-pixels", 16_777_216L));
+        this.stopTimeoutSeconds = Math.max(1, plugin.getConfig().getLong(
+                "performance.worker-stop-timeout-seconds", 8));
     }
 
     @Override
@@ -61,10 +79,7 @@ final class ImageSourceWorker implements SourceWorker {
 
     private void run() {
         try {
-            int retryDelay = Math.max(1, plugin.getConfig().getInt(
-                    "stream.reconnect-delay-seconds", 3));
-            int retryMax = Math.max(retryDelay, plugin.getConfig().getInt(
-                    "stream.reconnect-max-delay-seconds", 30));
+            int retryDelay = reconnectDelaySeconds;
             while (running.get()) {
                 while (running.get() && !sharedSource.shouldDecode()) {
                     state.set("paused (no viewers)");
@@ -85,9 +100,7 @@ final class ImageSourceWorker implements SourceWorker {
                         throw new IllegalArgumentException("unsupported or invalid image");
                     }
                     long pixels = (long) image.getWidth() * image.getHeight();
-                    long maxPixels = Math.max(1, plugin.getConfig().getLong(
-                            "sources.max-image-pixels", 16_777_216L));
-                    if (pixels > maxPixels) {
+                    if (pixels > maxImagePixels) {
                         throw new IllegalArgumentException("image exceeds max-image-pixels");
                     }
                     BufferedImage converted = copyFrame(image);
@@ -98,8 +111,8 @@ final class ImageSourceWorker implements SourceWorker {
                     state.set("live");
                     sharedSource.publish(converted);
 
-                    while (running.get()) {
-                        sleepMillis(500);
+                    while (running.get() && sleepMillis(30_000)) {
+                        // Static sources stay loaded until the worker is stopped.
                     }
                 } catch (Exception exception) {
                     if (!running.get()) {
@@ -114,7 +127,7 @@ final class ImageSourceWorker implements SourceWorker {
                     if (!sleepMillis(TimeUnit.SECONDS.toMillis(retryDelay))) {
                         return;
                     }
-                    retryDelay = Math.min(retryMax, retryDelay * 2);
+                    retryDelay = nextRetryDelay(retryDelay, reconnectMaxDelaySeconds);
                 }
             }
         } finally {
@@ -129,6 +142,9 @@ final class ImageSourceWorker implements SourceWorker {
             return loadRemoteImage();
         }
         Path path = Path.of(plugin.resolveSourceInput(source));
+        if (Files.size(path) > maxImageBytes) {
+            throw new IllegalArgumentException("image exceeds max-image-bytes");
+        }
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
             return ImageIO.read(input);
         }
@@ -137,27 +153,30 @@ final class ImageSourceWorker implements SourceWorker {
     private BufferedImage loadRemoteImage() throws Exception {
         HttpURLConnection connection = (HttpURLConnection) URI.create(source.value())
                 .toURL().openConnection();
-        int timeout = (int) Duration.ofSeconds(
-                Math.max(1, plugin.getConfig().getInt(
-                        "sources.http-timeout-seconds", 10))).toMillis();
-        connection.setConnectTimeout(timeout);
-        connection.setReadTimeout(timeout);
+        connection.setConnectTimeout(httpTimeoutMillis);
+        connection.setReadTimeout(httpTimeoutMillis);
         connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("User-Agent", "LuigiScreen/1");
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) {
             throw new IllegalStateException("HTTP " + status);
         }
-        int maxBytes = Math.max(1, plugin.getConfig().getInt(
-                "sources.max-image-bytes", 16 * 1024 * 1024));
+        long contentLength = connection.getContentLengthLong();
+        if (contentLength > maxImageBytes) {
+            connection.disconnect();
+            throw new IllegalArgumentException("image exceeds max-image-bytes");
+        }
+        int initialCapacity = contentLength > 0
+                ? (int) Math.min(contentLength, maxImageBytes)
+                : Math.min(8192, maxImageBytes);
         try (InputStream input = new BufferedInputStream(connection.getInputStream());
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream output = new ByteArrayOutputStream(initialCapacity)) {
             byte[] buffer = new byte[8192];
             int total = 0;
             int read;
             while ((read = input.read(buffer)) >= 0) {
                 total += read;
-                if (total > maxBytes) {
+                if (total > maxImageBytes) {
                     throw new IllegalArgumentException("image exceeds max-image-bytes");
                 }
                 output.write(buffer, 0, read);
@@ -178,7 +197,8 @@ final class ImageSourceWorker implements SourceWorker {
             return true;
         }
         try {
-            boolean stopped = current.awaitTermination(4, TimeUnit.SECONDS);
+            boolean stopped = current.awaitTermination(
+                    stopTimeoutSeconds, TimeUnit.SECONDS);
             if (stopped) {
                 executor = null;
                 state.set("stopped");
@@ -262,6 +282,10 @@ final class ImageSourceWorker implements SourceWorker {
             return exception.getClass().getSimpleName();
         }
         return StreamUrlSanitizer.mask(message);
+    }
+
+    private static int nextRetryDelay(int current, int maximum) {
+        return current >= maximum / 2 ? maximum : Math.min(maximum, current * 2);
     }
 
     private boolean sleepMillis(long millis) {

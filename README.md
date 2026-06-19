@@ -114,7 +114,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 46 automated tests covering:
+The current suite contains 48 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -129,6 +129,7 @@ The current suite contains 46 automated tests covering:
 - MediaMTX generation
 - Localization files and debug text formatting
 - Duration parsing for playlist and event timing
+- Zero-copy MapEngine render-surface wrapping
 
 ## Platform limits
 
@@ -205,6 +206,20 @@ Use them with:
 When two screens select the same active source, LuigiScreen still shares one
 loader. Text event steps render an internal LuigiScreen frame and then return to
 the configured playlist or fallback source.
+
+Folder playlist entries are scanned and cached during startup or
+`/screen reload`. Run `/screen reload` after adding or removing files from a
+playlist folder.
+
+## Runtime performance
+
+- MapEngine render surfaces are reused instead of reconstructed for every frame.
+- Delta buffers are allocated once per screen and updated in place.
+- Player locations are captured once per viewer refresh and shared by all screens.
+- Screens sharing a source use one decoder or image loader.
+- Static image workers sleep until stopped after their frame is loaded.
+- `/screen start all` and `/screen stop all` save the config once per batch.
+- Decoder shutdown waits longer than the configured remote I/O timeout.
 
 ## Free and Plus editions
 

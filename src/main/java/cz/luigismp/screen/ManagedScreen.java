@@ -13,14 +13,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DirectColorModel;
-import java.awt.image.WritableRaster;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,14 +38,17 @@ final class ManagedScreen {
     private final AtomicLong lastRenderNanos = new AtomicLong();
 
     private volatile ScreenDefinition definition;
-    private volatile Player[] receiverSnapshot = new Player[0];
+    private volatile List<Player> receiverSnapshot = List.of();
     private volatile String lastRenderError = "none";
     private volatile long nextRenderNanos;
+    private volatile double effectiveFps;
+    private volatile int maxDeltaMaps;
     private volatile IMapDisplay display;
     private volatile IDrawingSpace drawing;
     private boolean glowing;
     private boolean dithering;
     private FullSpacedColorBuffer previousFrame;
+    private RenderSurface renderSurface;
     private World displayWorld;
 
     ManagedScreen(LuigiScreenPlugin plugin, MapEngineApi mapEngine,
@@ -69,6 +66,7 @@ final class ManagedScreen {
         this.display.glowing(glowing);
         this.drawing.ctx().converter(
                 dithering ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
+        reloadPerformanceSettings();
     }
 
     String id() {
@@ -82,6 +80,7 @@ final class ManagedScreen {
     void updateDefinition(ScreenDefinition value) {
         definition = value;
         nextRenderNanos = 0;
+        reloadPerformanceSettings();
     }
 
     void reloadRenderingSettings() {
@@ -101,6 +100,7 @@ final class ManagedScreen {
                     updatedDithering ? Converter.FLOYD_STEINBERG : Converter.DIRECT);
             dithering = updatedDithering;
         }
+        reloadPerformanceSettings();
         forceFullFrame.set(true);
     }
 
@@ -120,7 +120,7 @@ final class ManagedScreen {
             }
         }
         spawnedViewers.clear();
-        receiverSnapshot = new Player[0];
+        receiverSnapshot = List.of();
     }
 
     int width() {
@@ -144,7 +144,7 @@ final class ManagedScreen {
     }
 
     int viewers() {
-        return receiverSnapshot.length;
+        return receiverSnapshot.size();
     }
 
     boolean hasViewerWithPermission(String permission) {
@@ -160,7 +160,7 @@ final class ManagedScreen {
     }
 
     boolean hasViewers() {
-        return receiverSnapshot.length > 0;
+        return !receiverSnapshot.isEmpty();
     }
 
     boolean enabled() {
@@ -168,18 +168,10 @@ final class ManagedScreen {
     }
 
     double effectiveFps() {
-        IMapDisplay current = display;
-        return ScreenPolicy.effectiveFps(
-                definition.fps(),
-                plugin.getConfig().getBoolean("performance.adaptive-fps", true),
-                current == null ? 0 : current.width(),
-                current == null ? 0 : current.height(),
-                plugin.getConfig().getDouble("performance.max-map-updates-per-second", 400),
-                plugin.getConfig().getDouble("performance.minimum-fps", 0.2)
-        );
+        return effectiveFps;
     }
 
-    void refreshViewers() {
+    void refreshViewers(List<ViewerPosition> onlinePlayers) {
         if (destroyed.get()) {
             return;
         }
@@ -198,16 +190,18 @@ final class ManagedScreen {
         List<Player> receivers = new ArrayList<>();
         boolean addedViewer = false;
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld() != currentWorld) {
+        ScreenDefinition currentDefinition = definition;
+        for (ViewerPosition viewer : onlinePlayers) {
+            Player player = viewer.player();
+            if (viewer.world() != currentWorld) {
                 continue;
             }
-            if (!ScreenPermissions.canView(player, definition)) {
+            if (!ScreenPermissions.canView(player, currentDefinition)) {
                 continue;
             }
-            double dx = player.getLocation().getX() - centerX;
-            double dy = player.getLocation().getY() - centerY;
-            double dz = player.getLocation().getZ() - centerZ;
+            double dx = viewer.x() - centerX;
+            double dy = viewer.y() - centerY;
+            double dz = viewer.z() - centerZ;
             if (dx * dx + dy * dy + dz * dz > maxDistanceSquared) {
                 continue;
             }
@@ -228,7 +222,7 @@ final class ManagedScreen {
             }
             spawnedViewers.remove(uuid);
         }
-        receiverSnapshot = receivers.toArray(Player[]::new);
+        receiverSnapshot = List.copyOf(receivers);
         if (addedViewer) {
             forceFullFrame.set(true);
         }
@@ -236,6 +230,12 @@ final class ManagedScreen {
 
     void removeViewer(UUID playerId) {
         spawnedViewers.remove(playerId);
+        List<Player> current = receiverSnapshot;
+        if (current.stream().anyMatch(player -> player.getUniqueId().equals(playerId))) {
+            receiverSnapshot = current.stream()
+                    .filter(player -> !player.getUniqueId().equals(playerId))
+                    .toList();
+        }
     }
 
     void offerFrame(SharedVideoFrame frame) {
@@ -324,18 +324,26 @@ final class ManagedScreen {
                 if (currentDrawing == null) {
                     return;
                 }
-                currentDrawing.ctx().receivers(Arrays.asList(receiverSnapshot));
+                currentDrawing.ctx().receivers(receiverSnapshot);
                 if (shared != null) {
-                    scaleIntoBuffer(shared.image(), currentDrawing.buffer());
+                    FullSpacedColorBuffer target = currentDrawing.buffer();
+                    RenderSurface surface = renderSurface;
+                    if (surface == null || !surface.wraps(target)) {
+                        surface = new RenderSurface(target);
+                        renderSurface = surface;
+                    }
+                    scaleIntoImage(shared.image(), surface.image());
                 }
 
-                int maxDeltaMaps = Math.max(0,
-                        plugin.getConfig().getInt("performance.delta-updates-max-maps", 256));
                 boolean useDelta = (long) currentDisplay.width()
                         * currentDisplay.height() <= maxDeltaMaps;
                 currentDrawing.ctx().previousBuffer(fullFrame || !useDelta ? null : previousFrame);
                 currentDrawing.flush();
-                previousFrame = useDelta ? currentDrawing.buffer().copy() : null;
+                if (useDelta) {
+                    capturePreviousFrame(currentDrawing.buffer());
+                } else {
+                    previousFrame = null;
+                }
                 renderedFrames.incrementAndGet();
                 lastRenderError = "none";
                 renderCompleted = true;
@@ -368,17 +376,16 @@ final class ManagedScreen {
             display = null;
             drawing = null;
             previousFrame = null;
+            renderSurface = null;
         }
         SharedVideoFrame queued = pendingFrame.getAndSet(null);
         if (queued != null) {
             queued.release();
         }
-        receiverSnapshot = new Player[0];
+        receiverSnapshot = List.of();
         forceFullFrame.set(false);
         if (oldDisplay != null) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                oldDisplay.despawn(player);
-            }
+            despawnTrackedViewers(oldDisplay);
             oldDisplay.destroy();
         }
         spawnedViewers.clear();
@@ -430,19 +437,31 @@ final class ManagedScreen {
         return bytes;
     }
 
-    private static void scaleIntoBuffer(BufferedImage source, FullSpacedColorBuffer target) {
-        int width = target.width();
-        int height = target.height();
-        int[] masks = {0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000};
-        DataBufferInt dataBuffer = new DataBufferInt(target.buffer(), target.size());
-        WritableRaster raster = WritableRaster.createPackedRaster(
-                dataBuffer, width, height, width, masks, null);
-        DirectColorModel colorModel = new DirectColorModel(
-                ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                32, masks[0], masks[1], masks[2], masks[3],
-                false, DataBuffer.TYPE_INT);
-        BufferedImage output = new BufferedImage(colorModel, raster, false, null);
+    private void reloadPerformanceSettings() {
+        IMapDisplay current = display;
+        effectiveFps = ScreenPolicy.effectiveFps(
+                definition.fps(),
+                plugin.getConfig().getBoolean("performance.adaptive-fps", true),
+                current == null ? 0 : current.width(),
+                current == null ? 0 : current.height(),
+                plugin.getConfig().getDouble("performance.max-map-updates-per-second", 400),
+                plugin.getConfig().getDouble("performance.minimum-fps", 0.2));
+        maxDeltaMaps = Math.max(0,
+                plugin.getConfig().getInt("performance.delta-updates-max-maps", 256));
+    }
 
+    private void capturePreviousFrame(FullSpacedColorBuffer current) {
+        if (previousFrame == null
+                || previousFrame.width() != current.width()
+                || previousFrame.height() != current.height()) {
+            previousFrame = new FullSpacedColorBuffer(current.width(), current.height());
+        }
+        System.arraycopy(current.buffer(), 0, previousFrame.buffer(), 0, current.size());
+    }
+
+    private static void scaleIntoImage(BufferedImage source, BufferedImage output) {
+        int width = output.getWidth();
+        int height = output.getHeight();
         Graphics2D graphics = output.createGraphics();
         try {
             graphics.setColor(Color.BLACK);

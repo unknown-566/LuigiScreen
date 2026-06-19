@@ -6,13 +6,13 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 final class PlaybackController {
 
@@ -20,7 +20,7 @@ final class PlaybackController {
 
     private final LuigiScreenPlugin plugin;
     private final Random random = new Random();
-    private final Map<String, RuntimeState> states = new ConcurrentHashMap<>();
+    private final Map<String, RuntimeState> states = new HashMap<>();
     private Map<String, PlaylistDefinition> playlists = Map.of();
     private Map<String, EventDefinition> events = Map.of();
     private BukkitTask task;
@@ -42,6 +42,10 @@ final class PlaybackController {
         long tickSeconds = Math.max(1, plugin.getConfig().getLong("playback.tick-seconds", 1));
         task = Bukkit.getScheduler().runTaskTimer(
                 plugin, this::tick, 20L, tickSeconds * 20L);
+    }
+
+    void activate() {
+        tick();
     }
 
     void stop() {
@@ -225,20 +229,24 @@ final class PlaybackController {
 
     private PlaybackItem selectItem(
             String screenId, PlaylistDefinition playlist, RuntimeState state, long now) {
-        List<PlaybackItem> eligible = playlist.items().stream()
-                .filter(item -> item.conditions().matches(plugin, screenId))
-                .filter(item -> state.cooldownUntilMillis(item.key()) <= now)
-                .toList();
-        if (eligible.size() > 1) {
-            eligible = eligible.stream()
-                    .filter(item -> !item.key().equals(state.currentItem))
-                    .toList();
+        List<PlaybackItem> eligible = new ArrayList<>(playlist.items().size());
+        for (PlaybackItem item : playlist.items()) {
+            if (item.conditions().matches(plugin, screenId)
+                    && state.cooldownUntilMillis(item.key()) <= now) {
+                eligible.add(item);
+            }
         }
-        int totalWeight = eligible.stream().mapToInt(PlaybackItem::weight).sum();
+        if (eligible.size() > 1) {
+            eligible.removeIf(item -> item.key().equals(state.currentItem));
+        }
+        long totalWeight = 0;
+        for (PlaybackItem item : eligible) {
+            totalWeight += item.weight();
+        }
         if (totalWeight < 1) {
             return null;
         }
-        int roll = random.nextInt(totalWeight);
+        long roll = random.nextLong(totalWeight);
         for (PlaybackItem item : eligible) {
             roll -= item.weight();
             if (roll < 0) {
@@ -249,7 +257,7 @@ final class PlaybackController {
     }
 
     private boolean playItem(String screenId, PlaybackItem item, RuntimeState state, long now) {
-        Optional<ResolvedPlayback> resolved = item.resolve(plugin, random);
+        Optional<ResolvedPlayback> resolved = item.resolve(random);
         if (resolved.isEmpty()) {
             return false;
         }
@@ -329,10 +337,22 @@ final class PlaybackController {
             PlaybackItem item = PlaybackItem.fromSection(
                     ownerId, rawItemId, itemSection, defaultDuration);
             if (item != null) {
-                items.add(item);
+                items.add(cacheFolderSources(item));
             }
         }
-        return items;
+        return List.copyOf(items);
+    }
+
+    private PlaybackItem cacheFolderSources(PlaybackItem item) {
+        if (item.folder() == null || item.folder().isBlank()) {
+            return item;
+        }
+        try {
+            return item.withFolderSources(
+                    plugin.mediaFolderSources(item.folder(), item.mediaTypes()));
+        } catch (IOException ignored) {
+            return item.withFolderSources(List.of());
+        }
     }
 
     private record PlaylistDefinition(String id, List<PlaybackItem> items) {
@@ -351,7 +371,7 @@ final class PlaybackController {
     }
 
     private static final class RuntimeState {
-        private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+        private final Map<String, Long> cooldowns = new HashMap<>();
         private EventPlayback activeEvent;
         private String currentItem = "";
         private String currentLabel = "";
@@ -373,6 +393,7 @@ final class PlaybackController {
             ScreenSource source,
             String folder,
             List<SourceType> mediaTypes,
+            List<ScreenSource> folderSources,
             String message,
             int weight,
             long durationMillis,
@@ -383,21 +404,16 @@ final class PlaybackController {
             return ownerId + ":" + id;
         }
 
-        private Optional<ResolvedPlayback> resolve(LuigiScreenPlugin plugin, Random random) {
+        private Optional<ResolvedPlayback> resolve(Random random) {
             if (source != null) {
                 return Optional.of(new ResolvedPlayback(source, null, durationMillis));
             }
             if (folder != null && !folder.isBlank()) {
-                try {
-                    List<ScreenSource> options = plugin.mediaFolderSources(folder, mediaTypes);
-                    if (options.isEmpty()) {
-                        return Optional.empty();
-                    }
-                    ScreenSource chosen = options.get(random.nextInt(options.size()));
-                    return Optional.of(new ResolvedPlayback(chosen, null, durationMillis));
-                } catch (IOException ignored) {
+                if (folderSources.isEmpty()) {
                     return Optional.empty();
                 }
+                ScreenSource chosen = folderSources.get(random.nextInt(folderSources.size()));
+                return Optional.of(new ResolvedPlayback(chosen, null, durationMillis));
             }
             if ("text".equals(type) || "countdown".equals(type)) {
                 return Optional.of(new ResolvedPlayback(null, message, durationMillis));
@@ -423,13 +439,14 @@ final class PlaybackController {
             if ("folder".equals(type)) {
                 String folder = section.getString("folder", section.getString("value", ""));
                 return new PlaybackItem(ownerId, id, type, null, folder,
-                        readMediaTypes(section), "", weight, duration, cooldown, conditions);
+                        readMediaTypes(section), List.of(), "",
+                        weight, duration, cooldown, conditions);
             }
             if ("text".equals(type) || "countdown".equals(type)) {
                 String text = section.getString("text",
                         section.getString("title", type.equals("countdown")
                                 ? "Starting soon" : id));
-                return new PlaybackItem(ownerId, id, type, null, null, List.of(),
+                return new PlaybackItem(ownerId, id, type, null, null, List.of(), List.of(),
                         text, weight, duration, cooldown, conditions);
             }
             SourceType sourceType = SourceType.parse(type);
@@ -438,8 +455,14 @@ final class PlaybackController {
             if (source == null || !source.isValid()) {
                 return null;
             }
-            return new PlaybackItem(ownerId, id, type, source, null, List.of(),
+            return new PlaybackItem(ownerId, id, type, source, null, List.of(), List.of(),
                     "", weight, duration, cooldown, conditions);
+        }
+
+        private PlaybackItem withFolderSources(List<ScreenSource> sources) {
+            return new PlaybackItem(ownerId, id, type, source, folder, mediaTypes,
+                    List.copyOf(sources), message, weight, durationMillis,
+                    cooldownMillis, conditions);
         }
 
         private static List<SourceType> readMediaTypes(ConfigurationSection section) {

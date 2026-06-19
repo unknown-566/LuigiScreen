@@ -236,9 +236,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.13`
+**Version number:** `1.1.0-alpha.14`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.13`
+**Version title:** `LuigiScreen 1.1.0-alpha.14`
 
 **Release channel:** Alpha
 
@@ -251,15 +251,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.13.jar
+LuigiScreen-1.1.0-alpha.14.jar
 ```
 
-**File size:** 55,294,941 bytes
+**File size:** 55,241,604 bytes
 
 **SHA-256:**
 
 ```text
-35E48737DB370CC9C83D3FC455AD929444EAA2E8E53A07C940505BA390B1E409
+D8FDAD406114766DDCAC9C95694C15EF45C32A635E1951001808B2CC529AFBDD
 ```
 
 **Dependency:**
@@ -269,20 +269,23 @@ LuigiScreen-1.1.0-alpha.13.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.13
+## LuigiScreen 1.1.0-alpha.14
 
-### Highlights
+### Performance and reliability
 
-- Added per-screen playlists with weighted random media rotation
-- Added `/screen playlist list`, `/screen playlist set <screen> <playlist>` and `/screen playlist clear <screen>`
-- Added manual event scenes with ordered sequences
-- Added `/screen event list`, `/screen event play <screen> <event>` and `/screen event stop <screen>`
-- Added random folder items for local videos, images and GIFs
-- Added `duration` and `cooldown` parsing with `ms`, `s`, `m` and `h` units
-- Added basic playback conditions: `min-online`, `min-viewers`, `viewer-permission` and `tps-above`
-- Kept configured screen sources as fallback sources while playlist/event runtime switches stay non-persistent
-- Added `luigiscreen.playlist` and `luigiscreen.event`
-- 46 automated tests
+- Reused the MapEngine render surface instead of rebuilding a raster and color model for every frame
+- Reused delta frame buffers in place, substantially reducing per-screen garbage collection pressure
+- Captured player positions once per viewer refresh and shared the snapshot across all screens
+- Cached playlist folder contents during startup and `/screen reload` instead of scanning the disk during playback
+- Reduced static image worker wakeups and cached immutable worker settings outside background threads
+- Loop local videos and GIFs by seeking before falling back to a decoder reconnect
+- Save `config.yml` once for `/screen start all` and `/screen stop all`
+- Fixed newly created and cloned screens not being saved immediately
+- Added configurable FFmpeg I/O and safe worker shutdown timeouts
+- Enforced the image byte limit for local files and pre-sized remote image downloads
+- Protected the shared render scheduler from one screen terminating the entire render loop
+- Removed unused duplicate build metadata while retaining Windows and Linux native libraries and licenses
+- 48 automated tests
 
 ### Platform support
 
@@ -298,6 +301,7 @@ LuigiScreen-1.1.0-alpha.13.jar
 - No ARM, macOS or Folia support
 - MediaMTX and a publisher are only required for RTMP
 - Events are manual commands in this alpha; automatic triggers are planned later
+- Playlist folders are refreshed during startup or `/screen reload`
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
 Read the [installation guide](https://unknown-56-works.gitbook.io/luigiscreen/getting-started/installation) before installing.
@@ -356,7 +360,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.13` uploaded as Alpha
+- [ ] `1.1.0-alpha.14` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible
