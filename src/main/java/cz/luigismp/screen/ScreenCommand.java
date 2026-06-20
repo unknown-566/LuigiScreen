@@ -22,7 +22,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = List.of(
             "create", "clone", "list", "start", "stop", "remove",
             "status", "source", "playlist", "event", "set", "reload", "debug",
-            "mediamtx", "menu", "studio", "vote");
+            "mediamtx", "menu", "studio", "web", "vote");
     private static final List<String> SET_PROPERTIES =
             List.of("url", "fps", "distance", "enabled", "permission");
     private final LuigiScreenPlugin plugin;
@@ -61,6 +61,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             case "set" -> set(sender, args);
             case "debug" -> debug(sender);
             case "menu", "studio" -> menu(sender);
+            case "web" -> web(sender, args);
             case "vote" -> vote(sender, args);
             case "mediamtx" -> mediaMtx(sender, args);
             case "reload" -> {
@@ -482,6 +483,32 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         plugin.openStudio(player);
     }
 
+    private void web(CommandSender sender, String[] args) {
+        StudioWebServer web = plugin.webStudio();
+        if (web == null) {
+            message(sender, "commands.web-unavailable");
+            return;
+        }
+        String action = args.length < 2 ? "open" : args[1].toLowerCase(Locale.ROOT);
+        if (action.equals("status")) {
+            message(sender, "commands.web-status", "status", web.status());
+            return;
+        }
+        if (action.equals("revoke")) {
+            message(sender, "commands.web-revoked", "count", web.revoke(sender));
+            return;
+        }
+        String link = web.createLoginLink(sender);
+        if (link == null) {
+            message(sender, "commands.web-unavailable");
+            return;
+        }
+        sender.sendMessage(plugin.messages().component("commands.web-link", "url", link)
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(link))
+                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                        plugin.messages().component("commands.web-hover"))));
+    }
+
     private void vote(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             message(sender, "commands.vote-player-only");
@@ -543,6 +570,7 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         message(sender, "commands.help-set");
         message(sender, "commands.help-debug");
         message(sender, "commands.help-menu");
+        message(sender, "commands.help-web");
         message(sender, "commands.help-vote");
         message(sender, "commands.help-mediamtx",
                 "argument", "<" + plugin.messages().plain("commands.mediamtx-argument") + ">");
@@ -617,6 +645,9 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         String subcommand = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2 && subcommand.equals("mediamtx")) {
             return matching(MediaMtxSetupManager.situationNames(), args[1]);
+        }
+        if (args.length == 2 && subcommand.equals("web")) {
+            return matching(List.of("open", "status", "revoke"), args[1]);
         }
         if (args.length == 2 && subcommand.equals("vote")) {
             List<String> values = new ArrayList<>(plugin.screenIds());

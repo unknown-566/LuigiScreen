@@ -1,5 +1,21 @@
 language: cs
 
+web-studio:
+  # Studio is local-only by default. Use a reverse proxy with HTTPS for remote access.
+  enabled: true
+  bind: "127.0.0.1"
+  port: 8765
+  # Set this when Studio is exposed through a reverse proxy, for example:
+  # public-url: "https://studio.example.com"
+  public-url: ""
+  server-name: "LuigiScreen Server"
+  session-hours: 8
+  login-token-minutes: 5
+  live-update-millis: 1000
+  # Generated only while at least one authenticated Web Studio session exists.
+  preview-refresh-millis: 1000
+  preview-max-width: 640
+
 updates:
   # Checks the public Modrinth project without blocking the server thread.
   enabled: true

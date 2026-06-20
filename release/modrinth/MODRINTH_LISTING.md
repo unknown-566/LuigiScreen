@@ -12,7 +12,7 @@ This file is the source of truth for the LuigiScreen Modrinth page.
 
 **Summary:**
 
-> Minecraft media screens with live streams, videos and a complete in-game broadcast Control Studio.
+> Minecraft media screens with live streams, videos and secure in-game plus browser broadcast control.
 
 **Recommended categories:**
 
@@ -76,6 +76,9 @@ No client mod is required. Players join with a normal Minecraft client.
 ## Features
 
 - In-game Control Studio with role-based access
+- Secure browser Web Studio with one-time login links and revocable sessions
+- Preview/Program Live Studio with bounded live source thumbnails
+- Contextual `i` help throughout Web Studio
 - Dashboard, Live Control Room, queues and playback explanations
 - Watched Media Library with validation and generated map thumbnails
 - Draft/Publish editing, audit history, snapshots and undo
@@ -243,9 +246,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.2.0-alpha.1`
+**Version number:** `1.2.0-alpha.2`
 
-**Version title:** `LuigiScreen 1.2.0-alpha.1 - Control Studio`
+**Version title:** `LuigiScreen 1.2.0-alpha.2 - Web Studio`
 
 **Release channel:** Alpha
 
@@ -258,15 +261,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.2.0-alpha.1.jar
+LuigiScreen-1.2.0-alpha.2.jar
 ```
 
-**File size:** 55,371,809 bytes
+**File size:** 55,452,507 bytes
 
 **SHA-256:**
 
 ```text
-BB159A6AA35A9F646A9CFAA3B17DE041C9D4D6292099F97E6E24B54A9F4AF889
+5153287C0C92F7410697D0249AAE68F016105002F59443013B1849B8BC489E94
 ```
 
 **Dependency:**
@@ -276,22 +279,22 @@ BB159A6AA35A9F646A9CFAA3B17DE041C9D4D6292099F97E6E24B54A9F4AF889
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.2.0-alpha.1
+## LuigiScreen 1.2.0-alpha.2
 
-### Control Studio
+### Web Studio
 
-- Added the in-game Control Studio opened with `/screen menu`
-- Added dashboard, screen details, Live Control Room and per-screen health
-- Added playback hold, skip, repeat, return, content queues and explanations
-- Added a watched Media Library with validation and generated map thumbnails
-- Added playlist simulation, anti-repeat categories and `guaranteed-after`
-- Added condition diagnostics and expanded online/viewer/TPS/world/day conditions
-- Added event priorities and wait, manual, command, broadcast, sound, title and group steps
-- Added screen groups, recurring schedules, conflict detection and templates
-- Added Draft/Publish editing, config snapshots, audit history and undo
-- Added audience voting and aggregate usage statistics
-- Added section and action permissions for staff roles
-- 58 automated tests
+- Added a local browser-based broadcast control room opened with `/screen web`
+- Added dashboard, screen grid, Media Library, playlist/event editors and inspector
+- Added Preview/Program Live Studio, Take Live, queues and playback controls
+- Added schedules, screen groups, monitoring, diagnostics and emergency control
+- Added contextual `i` help to settings, fields, metrics and table columns
+- Added one-time login links, HttpOnly sessions, CSRF/origin protection and revocation
+- Added capability-based browser roles copied from the issuing Minecraft player
+- Added per-session drafts, typed validation, snapshots and safe Publish
+- Added external config-change protection to prevent accidental overwrites
+- Added compact SSE live updates and revision-based full-state refreshes
+- Added rate-limited, downscaled previews only while a browser is connected
+- 64 automated tests
 
 ### Platform support
 
@@ -307,7 +310,8 @@ BB159A6AA35A9F646A9CFAA3B17DE041C9D4D6292099F97E6E24B54A9F4AF889
 - No ARM, macOS or Folia support
 - MediaMTX and a publisher are only required for RTMP
 - Complex branch graphs still use configuration rather than a node canvas
-- Schedule creation uses the in-game chat prompt after clicking Create Schedule
+- Web Studio does not provide HTTPS; remote access requires a secure reverse proxy or VPN
+- Web Studio is structured and does not permit unrestricted YAML or file deletion
 - Only versions visible through the public Modrinth API can be detected
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
@@ -367,7 +371,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.2.0-alpha.1` uploaded as Alpha
+- [ ] `1.2.0-alpha.2` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

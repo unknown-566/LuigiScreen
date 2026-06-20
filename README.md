@@ -14,6 +14,10 @@ renders it through MapEngine. Players do not need a client mod.
 ## Features
 
 - In-game Control Studio opened with `/screen menu`
+- Browser Web Studio opened securely with `/screen web`
+- One-time login links, revocable sessions, CSRF protection and role-based API access
+- Preview/Program Live Studio with bounded live source thumbnails
+- Contextual `i` help for Web Studio settings, metrics and controls
 - Dashboard, screen details, Live Control Room and diagnostics
 - Media Library with automatic folder watching, validation and map thumbnails
 - Draft and Publish editing with config snapshots and one-click undo
@@ -81,6 +85,7 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | Command | Description |
 | --- | --- |
 | `/screen menu` | Open LuigiScreen Control Studio |
+| `/screen web [open\|status\|revoke]` | Open, inspect or revoke Web Studio sessions |
 | `/screen create <name> [width] [height]` | Create a named map screen |
 | `/screen clone <source> <new-name>` | Create another screen that shares its typed source |
 | `/screen list` | List all screens and masked source values |
@@ -130,7 +135,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 58 automated tests covering:
+The current suite contains 64 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -150,6 +155,7 @@ The current suite contains 58 automated tests covering:
 - Modrinth version-feed selection
 - Control Studio language and permission resources
 - media thumbnail generation
+- Web Studio JSON serialization, login security and bundled resources
 
 ## Platform limits
 
@@ -203,6 +209,21 @@ Control Studio includes:
 Generated studio state is stored in `plugins/LuigiScreen/studio.yml`. Cached
 thumbnails are stored under `plugins/LuigiScreen/media/.thumbnails/`, and
 pre-publish backups are kept in `plugins/LuigiScreen/history/`.
+
+## Web Studio
+
+Use `/screen web` to create a short-lived, one-time browser login. The embedded
+server listens on `127.0.0.1:8765` by default and provides dashboards, screen
+details, Media Library, playlist and event editors, Preview/Program Live
+Studio, schedules, groups, monitoring, diagnostics and structured drafts.
+
+Every property and field includes contextual `i` help. Live state uses a
+compact server-sent event stream, while preview capture is downscaled,
+rate-limited and inactive when no browser is connected.
+
+Do not expose the HTTP port directly to the internet. Remote use requires an
+HTTPS reverse proxy or authenticated VPN. See the complete
+[Web Studio guide](https://unknown-56-works.gitbook.io/luigiscreen/studio/web-studio).
 
 ## Playlists and events
 

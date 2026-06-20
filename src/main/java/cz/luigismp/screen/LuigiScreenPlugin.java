@@ -20,6 +20,7 @@ import org.bukkit.util.BlockVector;
 import org.bytedeco.javacv.FFmpegLogCallback;
 
 import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     private ModrinthUpdateChecker updateChecker;
     private StudioService studio;
     private StudioMenuManager studioMenus;
+    private StudioWebServer webStudio;
     private LocalizationManager messages;
     private BukkitTask viewerTask;
     private BukkitTask streamRestartTask;
@@ -99,6 +101,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         startEnabledSources();
         playbackController.start();
         studio.start();
+        webStudio = new StudioWebServer(this);
+        webStudio.start();
         updateChecker = new ModrinthUpdateChecker(this);
         updateChecker.start();
     }
@@ -123,6 +127,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
         if (studioMenus != null) {
             studioMenus.shutdown();
+        }
+        if (webStudio != null) {
+            webStudio.shutdown();
         }
         if (studio != null) {
             studio.shutdown();
@@ -512,6 +519,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 studio.reload();
                 studio.refreshMediaAsync();
             }
+            if (webStudio != null) {
+                webStudio.reload();
+            }
             if (updateChecker != null) {
                 updateChecker.start();
             }
@@ -788,6 +798,10 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    StudioWebServer webStudio() {
+        return webStudio;
+    }
+
     boolean applyGeneratedStreamUrl(String streamUrl) {
         ScreenSource previousDefault = defaultSource();
         getConfig().set("stream.url", streamUrl);
@@ -868,6 +882,18 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
                 (int) screens.values().stream().filter(ManagedScreen::enabled).count(),
                 sources.size()
         );
+    }
+
+    BufferedImage screenPreview(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        SharedMediaSource source = screen == null ? null : attachedSource(screen);
+        return source == null ? null : source.webPreview();
+    }
+
+    long screenPreviewVersion(String id) {
+        ManagedScreen screen = screens.get(ScreenDefinition.normalizeId(id));
+        SharedMediaSource source = screen == null ? null : attachedSource(screen);
+        return source == null ? 0 : source.webPreviewVersion();
     }
 
     private ManagedScreen register(ScreenDefinition definition, World world) {

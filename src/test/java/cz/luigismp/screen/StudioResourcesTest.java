@@ -21,6 +21,11 @@ class StudioResourcesTest {
         assertNotNull(plugin.getConfigurationSection("permissions.luigiscreen.menu.*"));
         assertNotNull(plugin.getConfigurationSection(
                 "permissions.luigiscreen.menu.emergency"));
+        assertNotNull(plugin.getConfigurationSection(
+                "permissions.luigiscreen.menu.configuration"));
+        assertNotNull(plugin.getConfigurationSection(
+                "permissions.luigiscreen.menu.monitoring"));
+        assertNotNull(plugin.getConfigurationSection("permissions.luigiscreen.web"));
         assertNotNull(plugin.getConfigurationSection("permissions.luigiscreen.vote"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.menu.*"));

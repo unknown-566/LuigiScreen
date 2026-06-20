@@ -126,6 +126,10 @@ final class StudioService {
     }
 
     synchronized boolean createGroup(Player actor, String id, List<String> screens) {
+        return createGroupNamed(actor == null ? "CONSOLE" : actor.getName(), id, screens);
+    }
+
+    synchronized boolean createGroupNamed(String actor, String id, List<String> screens) {
         String normalized = ScreenDefinition.normalizeId(id);
         List<String> valid = screens.stream().map(ScreenDefinition::normalizeId)
                 .filter(plugin::hasScreen).distinct().toList();
@@ -134,7 +138,7 @@ final class StudioService {
             return false;
         }
         config.set("groups." + normalized + ".screens", valid);
-        audit(actor, "created group " + normalized);
+        auditNamed(actor, "created group " + normalized);
         save();
         return true;
     }
@@ -157,6 +161,12 @@ final class StudioService {
 
     synchronized boolean createSchedule(Player actor, String id, String time,
                                         String target, String action, String value) {
+        return createScheduleNamed(actor == null ? "CONSOLE" : actor.getName(),
+                id, time, target, action, value);
+    }
+
+    synchronized boolean createScheduleNamed(String actor, String id, String time,
+                                              String target, String action, String value) {
         String normalized = ScreenDefinition.normalizeId(id);
         String normalizedTarget = ScreenDefinition.normalizeId(target);
         String normalizedAction = action.toLowerCase(Locale.ROOT);
@@ -170,7 +180,11 @@ final class StudioService {
                 || (!plugin.hasScreen(normalizedTarget)
                 && !groupIds().contains(normalizedTarget))
                 || !List.of("event", "playlist", "start", "stop", "return")
-                .contains(normalizedAction)) {
+                .contains(normalizedAction)
+                || (normalizedAction.equals("event")
+                && !plugin.eventIds().contains(ScreenDefinition.normalizeId(value)))
+                || (normalizedAction.equals("playlist")
+                && !plugin.playlistIds().contains(ScreenDefinition.normalizeId(value)))) {
             return false;
         }
         String path = "schedules." + normalized;
@@ -184,12 +198,16 @@ final class StudioService {
         config.set(path + ".priority", 50);
         config.set(path + ".conflict", "priority");
         schedules = readSchedules();
-        audit(actor, "created schedule " + normalized);
+        auditNamed(actor, "created schedule " + normalized);
         save();
         return true;
     }
 
     synchronized boolean createPlaylist(Player actor, String id) {
+        return createPlaylistNamed(actor == null ? "CONSOLE" : actor.getName(), id);
+    }
+
+    synchronized boolean createPlaylistNamed(String actor, String id) {
         String normalized = ScreenDefinition.normalizeId(id);
         String path = "playlists." + normalized;
         if (!ScreenDefinition.isValidId(normalized)
@@ -204,11 +222,15 @@ final class StudioService {
         plugin.getConfig().set(path + ".items.first.duration", "10s");
         plugin.saveConfig();
         plugin.reloadPlaybackDefinitions();
-        audit(actor, "created playlist " + normalized);
+        auditNamed(actor, "created playlist " + normalized);
         return true;
     }
 
     synchronized boolean createEvent(Player actor, String id) {
+        return createEventNamed(actor == null ? "CONSOLE" : actor.getName(), id);
+    }
+
+    synchronized boolean createEventNamed(String actor, String id) {
         String normalized = ScreenDefinition.normalizeId(id);
         String path = "events." + normalized;
         if (!ScreenDefinition.isValidId(normalized)
@@ -224,7 +246,7 @@ final class StudioService {
         plugin.getConfig().set(path + ".sequence.wait.duration", "1s");
         plugin.saveConfig();
         plugin.reloadPlaybackDefinitions();
-        audit(actor, "created event " + normalized);
+        auditNamed(actor, "created event " + normalized);
         return true;
     }
 
@@ -285,10 +307,14 @@ final class StudioService {
     }
 
     synchronized void setEmergency(Player actor, boolean enabled) {
+        setEmergencyNamed(actor == null ? "CONSOLE" : actor.getName(), enabled);
+    }
+
+    synchronized void setEmergencyNamed(String actor, boolean enabled) {
         emergency = enabled;
         config.set("runtime.emergency", enabled);
         applyEmergencyState(enabled);
-        audit(actor, enabled ? "enabled emergency mode" : "disabled emergency mode");
+        auditNamed(actor, enabled ? "enabled emergency mode" : "disabled emergency mode");
         save();
     }
 
@@ -383,6 +409,17 @@ final class StudioService {
         return true;
     }
 
+    synchronized boolean publishWebDraft(String actor, Map<String, Object> changes) {
+        if (changes == null || changes.isEmpty() || !snapshotConfig()) {
+            return false;
+        }
+        changes.forEach(plugin.getConfig()::set);
+        plugin.saveConfig();
+        auditNamed(actor, "published " + changes.size() + " web studio changes");
+        trimSnapshots();
+        return plugin.reloadScreenConfig();
+    }
+
     synchronized boolean undoLastPublish(Player player) {
         Path history = plugin.getDataFolder().toPath().resolve("history");
         try {
@@ -453,7 +490,11 @@ final class StudioService {
     }
 
     synchronized void audit(Player actor, String action) {
-        String name = actor == null ? "CONSOLE" : actor.getName();
+        auditNamed(actor == null ? "CONSOLE" : actor.getName(), action);
+    }
+
+    synchronized void auditNamed(String actor, String action) {
+        String name = actor == null || actor.isBlank() ? "CONSOLE" : actor;
         List<String> entries = new ArrayList<>(config.getStringList("audit"));
         entries.add(AUDIT_TIME.format(LocalDateTime.now()) + " | " + name + " | " + action);
         while (entries.size() > config.getInt("history.max-entries", 20)) {

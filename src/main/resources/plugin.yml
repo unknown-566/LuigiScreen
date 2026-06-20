@@ -10,7 +10,7 @@ commands:
   luigiscreen:
     description: Manage LuigiScreen media screens and Control Studio.
     aliases: [screen]
-    usage: /screen <menu|create|clone|list|start|stop|remove|status|source|playlist|event|vote|set|reload|debug|mediamtx>
+    usage: /screen <menu|web|create|clone|list|start|stop|remove|status|source|playlist|event|vote|set|reload|debug|mediamtx>
 
 permissions:
   luigiscreen.admin:
@@ -33,6 +33,7 @@ permissions:
       luigiscreen.mediamtx: true
       luigiscreen.update: true
       luigiscreen.vote: true
+      luigiscreen.web: true
       luigiscreen.menu.*: true
       luigiscreen.see.*: true
   luigiscreen.create:
@@ -89,11 +90,15 @@ permissions:
       luigiscreen.menu.media: true
       luigiscreen.menu.playlists: true
       luigiscreen.menu.events: true
+      luigiscreen.menu.automations: true
       luigiscreen.menu.live: true
       luigiscreen.menu.groups: true
       luigiscreen.menu.schedules: true
       luigiscreen.menu.templates: true
       luigiscreen.menu.diagnostics: true
+      luigiscreen.menu.monitoring: true
+      luigiscreen.menu.configuration: true
+      luigiscreen.menu.settings: true
       luigiscreen.menu.history: true
       luigiscreen.menu.emergency: true
       luigiscreen.menu.control: true
@@ -112,6 +117,9 @@ permissions:
   luigiscreen.menu.events:
     description: Views and starts event timelines.
     default: false
+  luigiscreen.menu.automations:
+    description: Views Web Studio automation rules.
+    default: false
   luigiscreen.menu.live:
     description: Uses Live Control Room.
     default: false
@@ -127,6 +135,15 @@ permissions:
   luigiscreen.menu.diagnostics:
     description: Views screen diagnostics.
     default: false
+  luigiscreen.menu.monitoring:
+    description: Views Web Studio performance monitoring.
+    default: false
+  luigiscreen.menu.configuration:
+    description: Stages and publishes safe Web Studio configuration changes.
+    default: false
+  luigiscreen.menu.settings:
+    description: Views Web Studio server and session settings.
+    default: false
   luigiscreen.menu.history:
     description: Views the studio audit history.
     default: false
@@ -139,6 +156,9 @@ permissions:
   luigiscreen.vote:
     description: Allows a player to vote in active LuigiScreen media votes.
     default: true
+  luigiscreen.web:
+    description: Creates and revokes secure LuigiScreen Studio web sessions.
+    default: op
   luigiscreen.see.*:
     description: Allows viewing every permission-protected screen.
     default: false

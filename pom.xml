@@ -6,7 +6,7 @@
 
     <groupId>cz.luigismp</groupId>
     <artifactId>luigiscreen</artifactId>
-    <version>1.2.0-alpha.1</version>
+    <version>1.2.0-alpha.2</version>
     <packaging>jar</packaging>
     <name>LuigiScreen</name>
     <description>A server-side Paper/Bukkit media screen and broadcast control plugin.</description>

@@ -34,6 +34,7 @@ class ScreenPermissionsTest {
                 Map.entry("set", "luigiscreen.set"),
                 Map.entry("reload", "luigiscreen.reload"),
                 Map.entry("debug", "luigiscreen.debug"),
+                Map.entry("web", "luigiscreen.web"),
                 Map.entry("mediamtx", "luigiscreen.mediamtx")
         );
 
@@ -68,6 +69,8 @@ class ScreenPermissionsTest {
                 "permissions.luigiscreen.admin.children.luigiscreen.event"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.update"));
+        assertTrue(plugin.getBoolean(
+                "permissions.luigiscreen.admin.children.luigiscreen.web"));
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.see.*"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.create.default"));

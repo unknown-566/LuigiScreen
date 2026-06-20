@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>LuigiScreen Studio</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <button class="icon-button sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">LS</button>
+      <div class="brand">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <div><strong>LuigiScreen</strong><small>STUDIO</small></div>
+      </div>
+      <div class="connection-pill"><span id="connectionDot"></span><span id="serverName">Connecting</span></div>
+      <div class="top-spacer"></div>
+      <button class="command-trigger" id="commandTrigger"><kbd>Ctrl K</kbd><span data-i18n="search">Search Studio</span></button>
+      <div class="draft-state" id="draftState">No changes</div>
+      <button class="button ghost" id="discardButton" data-help="Discard every unpublished change in this browser session.">Discard</button>
+      <button class="button publish" id="publishButton" data-help="Validate, back up, apply and reload all staged changes.">Publish</button>
+      <button class="avatar" id="sessionAvatar" data-help="This temporary session controls which Studio actions are available.">?</button>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+      <nav id="navigation">
+        <section><label>OVERVIEW</label><button data-view="dashboard" class="active"><b>DB</b><span>Dashboard</span></button></section>
+        <section><label>BUILD</label>
+          <button data-view="screens"><b>SC</b><span>Screens</span></button>
+          <button data-view="media"><b>ME</b><span>Media</span></button>
+          <button data-view="playlists"><b>PL</b><span>Playlists</span></button>
+          <button data-view="events"><b>EV</b><span>Events</span></button>
+          <button data-view="automations"><b>AU</b><span>Automations</span></button>
+        </section>
+        <section><label>OPERATE</label>
+          <button data-view="live"><b>ON</b><span>Live Studio</span></button>
+          <button data-view="schedule"><b>CA</b><span>Schedule</span></button>
+        </section>
+        <section><label>SYSTEM</label>
+          <button data-view="monitoring"><b>MO</b><span>Monitoring</span></button>
+          <button data-view="diagnostics"><b>DX</b><span>Diagnostics</span></button>
+          <button data-view="configuration"><b>CF</b><span>Configuration</span></button>
+          <button data-view="settings"><b>ST</b><span>Settings</span></button>
+        </section>
+      </nav>
+      <div class="sidebar-foot"><span class="status-led"></span><span id="sideVersion">LuigiScreen</span></div>
+    </aside>
+
+    <main class="workspace">
+      <div class="page-heading">
+        <div><span class="eyebrow" id="pageEyebrow">OVERVIEW</span><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Live operational overview of every screen.</p></div>
+        <div class="page-actions" id="pageActions"></div>
+      </div>
+      <div id="workspaceContent" class="workspace-content loading"><div class="loader"><span></span><p>Connecting to LuigiScreen...</p></div></div>
+    </main>
+
+    <aside class="inspector" id="inspector">
+      <div class="inspector-head"><div><span class="eyebrow">INSPECTOR</span><h2 id="inspectorTitle">Nothing selected</h2></div><button class="icon-button" id="closeInspector">X</button></div>
+      <div id="inspectorContent" class="inspector-content"><p class="muted">Select a screen, media item, playlist item or event step to inspect it here.</p></div>
+    </aside>
+
+    <footer class="statusbar">
+      <span data-help="Server ticks per second. Values close to 20 indicate healthy timing.">TPS <b id="footTps">--</b></span>
+      <span data-help="Average milliseconds spent processing one server tick. Lower is better.">MSPT <b id="footMspt">--</b></span>
+      <span data-help="Screens currently enabled compared with all configured screens.">SCREENS <b id="footScreens">--</b></span>
+      <span data-help="Players currently receiving at least one LuigiScreen display.">VIEWERS <b id="footViewers">--</b></span>
+      <span data-help="Current state of the FFmpeg source pipeline.">FFMPEG <b id="footFfmpeg">--</b></span>
+      <span data-help="Whether the required MapEngine plugin is available.">MAPENGINE <b id="footMap">--</b></span>
+      <span class="status-spacer"></span>
+      <span id="liveConnection" data-help="Live synchronization between this browser and the Minecraft plugin.">LIVE SYNC</span>
+      <span class="warning-count" id="footWarnings">0 WARNINGS</span>
+    </footer>
+  </div>
+
+  <div class="command-palette" id="commandPalette" hidden>
+    <div class="palette-box"><input id="commandInput" autocomplete="off" placeholder="Open a screen, run an action, find media..."><div id="commandResults"></div><small>Enter to open, Esc to close</small></div>
+  </div>
+  <div class="modal" id="confirmModal" hidden><div class="modal-card"><span class="eyebrow">CONFIRM ACTION</span><h2 id="confirmTitle">Are you sure?</h2><p id="confirmText"></p><div><button class="button ghost" id="confirmCancel">Cancel</button><button class="button danger" id="confirmAccept">Confirm</button></div></div></div>
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+  <nav class="mobile-control" id="mobileControl">
+    <button data-mobile="preview">Preview</button><button data-mobile="take">Take Live</button><button data-mobile="next">Next</button><button data-mobile="pause">Pause</button><button data-mobile="emergency">Emergency</button>
+  </nav>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
