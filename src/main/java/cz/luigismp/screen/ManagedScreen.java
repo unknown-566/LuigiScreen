@@ -159,6 +159,14 @@ final class ManagedScreen {
         return false;
     }
 
+    boolean allViewersHavePermission(String permission) {
+        if (permission == null || permission.isBlank()) {
+            return true;
+        }
+        return !receiverSnapshot.isEmpty()
+                && receiverSnapshot.stream().allMatch(player -> player.hasPermission(permission));
+    }
+
     boolean hasViewers() {
         return !receiverSnapshot.isEmpty();
     }

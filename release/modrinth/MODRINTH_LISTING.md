@@ -12,7 +12,7 @@ This file is the source of truth for the LuigiScreen Modrinth page.
 
 **Summary:**
 
-> A server-side Paper/Bukkit plugin for live streams, videos, images, GIFs, playlists and event scenes on Minecraft map screens.
+> Minecraft media screens with live streams, videos and a complete in-game broadcast Control Studio.
 
 **Recommended categories:**
 
@@ -75,6 +75,12 @@ No client mod is required. Players join with a normal Minecraft client.
 
 ## Features
 
+- In-game Control Studio with role-based access
+- Dashboard, Live Control Room, queues and playback explanations
+- Watched Media Library with validation and generated map thumbnails
+- Draft/Publish editing, audit history, snapshots and undo
+- Screen groups, schedules, templates and audience voting
+- Playlist simulation, advanced anti-repeat and eligibility diagnostics
 - RTMP and MJPEG live streams
 - Looping local videos and GIFs
 - Local and URL images
@@ -237,9 +243,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.16`
+**Version number:** `1.2.0-alpha.1`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.16`
+**Version title:** `LuigiScreen 1.2.0-alpha.1 - Control Studio`
 
 **Release channel:** Alpha
 
@@ -252,15 +258,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.16.jar
+LuigiScreen-1.2.0-alpha.1.jar
 ```
 
-**File size:** 55,274,631 bytes
+**File size:** 55,371,809 bytes
 
 **SHA-256:**
 
 ```text
-5B3B68BB9B5BA0B851CF325C5D5496CD7FB199EEF414EEA32F6129A9868366F0
+BB159A6AA35A9F646A9CFAA3B17DE041C9D4D6292099F97E6E24B54A9F4AF889
 ```
 
 **Dependency:**
@@ -270,17 +276,22 @@ LuigiScreen-1.1.0-alpha.16.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.16
+## LuigiScreen 1.2.0-alpha.1
 
-### Runtime metadata fix
+### Control Studio
 
-- Restored the Maven metadata JavaCPP uses to identify the bundled FFmpeg version
-- Fixed `Version of org.bytedeco:ffmpeg could not be found` during startup
-- Prevented Paper's related `System.out/err.print` nag warning
-- Kept duplicate classifier metadata excluded while retaining the required base metadata
-- Added a GitHub Actions check that fails if FFmpeg or JavaCPP metadata is missing again
-- Verified JavaCPP reports bundled FFmpeg version `7.1.1-1.5.12`
-- 54 automated tests
+- Added the in-game Control Studio opened with `/screen menu`
+- Added dashboard, screen details, Live Control Room and per-screen health
+- Added playback hold, skip, repeat, return, content queues and explanations
+- Added a watched Media Library with validation and generated map thumbnails
+- Added playlist simulation, anti-repeat categories and `guaranteed-after`
+- Added condition diagnostics and expanded online/viewer/TPS/world/day conditions
+- Added event priorities and wait, manual, command, broadcast, sound, title and group steps
+- Added screen groups, recurring schedules, conflict detection and templates
+- Added Draft/Publish editing, config snapshots, audit history and undo
+- Added audience voting and aggregate usage statistics
+- Added section and action permissions for staff roles
+- 58 automated tests
 
 ### Platform support
 
@@ -295,8 +306,8 @@ LuigiScreen-1.1.0-alpha.16.jar
 - No stream audio in Minecraft
 - No ARM, macOS or Folia support
 - MediaMTX and a publisher are only required for RTMP
-- Events are manual commands in this alpha; automatic triggers are planned later
-- Playlist folders are refreshed during startup or `/screen reload`
+- Complex branch graphs still use configuration rather than a node canvas
+- Schedule creation uses the in-game chat prompt after clicking Create Schedule
 - Only versions visible through the public Modrinth API can be detected
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
@@ -356,7 +367,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.16` uploaded as Alpha
+- [ ] `1.2.0-alpha.1` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

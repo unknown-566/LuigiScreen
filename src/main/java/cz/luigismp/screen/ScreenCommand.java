@@ -21,7 +21,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "create", "clone", "list", "start", "stop", "remove",
-            "status", "source", "playlist", "event", "set", "reload", "debug", "mediamtx");
+            "status", "source", "playlist", "event", "set", "reload", "debug",
+            "mediamtx", "menu", "studio", "vote");
     private static final List<String> SET_PROPERTIES =
             List.of("url", "fps", "distance", "enabled", "permission");
     private final LuigiScreenPlugin plugin;
@@ -59,6 +60,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             case "event" -> event(sender, args);
             case "set" -> set(sender, args);
             case "debug" -> debug(sender);
+            case "menu", "studio" -> menu(sender);
+            case "vote" -> vote(sender, args);
             case "mediamtx" -> mediaMtx(sender, args);
             case "reload" -> {
                 if (plugin.reloadScreenConfig()) {
@@ -471,6 +474,66 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
                 ? "commands.debug-enabled" : "commands.debug-disabled");
     }
 
+    private void menu(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            message(sender, "commands.menu-player-only");
+            return;
+        }
+        plugin.openStudio(player);
+    }
+
+    private void vote(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            message(sender, "commands.vote-player-only");
+            return;
+        }
+        if (args.length >= 3 && args[1].equalsIgnoreCase("start")) {
+            if (!player.hasPermission(ScreenPermissions.ADMIN)
+                    && !player.hasPermission("luigiscreen.menu.live")) {
+                message(sender, "commands.no-permission",
+                        "permission", "luigiscreen.menu.live");
+                return;
+            }
+            List<String> options = args.length > 3
+                    ? List.of(args).subList(3, args.length)
+                    : plugin.studio().defaultVoteOptions();
+            boolean started = plugin.studio().startVote(
+                    player, args[2], options, 60_000);
+            message(sender, started ? "commands.vote-started" : "commands.vote-failed",
+                    "screen", args[2]);
+            return;
+        }
+        if (args.length >= 3 && args[1].equalsIgnoreCase("end")) {
+            if (!player.hasPermission(ScreenPermissions.ADMIN)
+                    && !player.hasPermission("luigiscreen.menu.live")) {
+                message(sender, "commands.no-permission",
+                        "permission", "luigiscreen.menu.live");
+                return;
+            }
+            boolean ended = plugin.studio().finishVote(player, args[2]);
+            message(sender, ended ? "commands.vote-ended" : "commands.vote-failed",
+                    "screen", args[2]);
+            return;
+        }
+        if (args.length >= 3 && args[1].equalsIgnoreCase("status")) {
+            VoteStatus status = plugin.studio().voteStatus(args[2]);
+            if (status == null) {
+                message(sender, "commands.vote-failed", "screen", args[2]);
+            } else {
+                message(sender, "commands.vote-status", "screen", status.screen(),
+                        "votes", status.votes(), "results", status.results());
+            }
+            return;
+        }
+        if (args.length < 3) {
+            message(sender, "commands.vote-usage");
+            return;
+        }
+        boolean cast = plugin.studio().castVote(player, args[1], args[2]);
+        message(sender, cast ? "commands.vote-cast" : "commands.vote-failed",
+                "screen", args[1]);
+    }
+
     private void help(CommandSender sender) {
         message(sender, "commands.help-create");
         message(sender, "commands.help-clone");
@@ -479,6 +542,8 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         message(sender, "commands.help-playback");
         message(sender, "commands.help-set");
         message(sender, "commands.help-debug");
+        message(sender, "commands.help-menu");
+        message(sender, "commands.help-vote");
         message(sender, "commands.help-mediamtx",
                 "argument", "<" + plugin.messages().plain("commands.mediamtx-argument") + ">");
     }
@@ -552,6 +617,16 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
         String subcommand = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2 && subcommand.equals("mediamtx")) {
             return matching(MediaMtxSetupManager.situationNames(), args[1]);
+        }
+        if (args.length == 2 && subcommand.equals("vote")) {
+            List<String> values = new ArrayList<>(plugin.screenIds());
+            values.addAll(List.of("start", "end", "status"));
+            return matching(values, args[1]);
+        }
+        if (args.length == 3 && subcommand.equals("vote")
+                && List.of("start", "end", "status").contains(
+                args[1].toLowerCase(Locale.ROOT))) {
+            return matching(plugin.screenIds(), args[2]);
         }
         if (args.length == 2 && List.of(
                 "clone", "start", "stop", "remove", "status", "source", "set")

@@ -13,6 +13,13 @@ renders it through MapEngine. Players do not need a client mod.
 
 ## Features
 
+- In-game Control Studio opened with `/screen menu`
+- Dashboard, screen details, Live Control Room and diagnostics
+- Media Library with automatic folder watching, validation and map thumbnails
+- Draft and Publish editing with config snapshots and one-click undo
+- Content queues, screen groups, schedules, templates and audience voting
+- Per-role permissions for every Control Studio section and action
+- Playback explanations, eligibility diagnostics and aggregate usage statistics
 - RTMP and MJPEG live streams
 - Looping local videos and GIFs
 - Local and URL images
@@ -73,6 +80,7 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 
 | Command | Description |
 | --- | --- |
+| `/screen menu` | Open LuigiScreen Control Studio |
 | `/screen create <name> [width] [height]` | Create a named map screen |
 | `/screen clone <source> <new-name>` | Create another screen that shares its typed source |
 | `/screen list` | List all screens and masked source values |
@@ -87,6 +95,8 @@ https://unknown-56-works.gitbook.io/luigiscreen/
 | `/screen reload` | Reload configuration and localization without destroying screens |
 | `/screen debug` | Toggle live performance statistics |
 | `/screen mediamtx <situation>` | Generate a MediaMTX configuration |
+| `/screen vote <screen> <option>` | Vote for the next media item |
+| `/screen vote start\|status\|end <screen> [options...]` | Manage an audience vote |
 
 `luigiscreen.admin` is granted to operators and includes every command plus
 access to all protected screens. Individual permissions include
@@ -120,7 +130,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 54 automated tests covering:
+The current suite contains 58 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -138,6 +148,8 @@ The current suite contains 54 automated tests covering:
 - Zero-copy MapEngine render-surface wrapping
 - Semantic alpha, beta and release version ordering
 - Modrinth version-feed selection
+- Control Studio language and permission resources
+- media thumbnail generation
 
 ## Platform limits
 
@@ -169,6 +181,29 @@ Relative local paths are resolved inside `plugins/LuigiScreen/media/`.
 Local videos and GIFs loop automatically. Existing `url:` config entries and
 `/screen set <name> url ...` remain supported as legacy RTMP syntax.
 
+## Control Studio
+
+Use `/screen menu` to open the in-game administration interface. The dashboard
+shows running screens, errors, active events, viewers and indexed media.
+
+Control Studio includes:
+
+- per-screen Now Playing, reason, next item, timing, health and location tools
+- hold, resume, skip, repeat, return-to-automation and queue controls
+- a Live Control Room for cueing media, events and emergency mode
+- a watched Media Library with generated map thumbnails
+- playlist probability simulation and current eligibility explanations
+- event timelines with media, wait, manual, command, broadcast, sound, title
+  and screen-group steps
+- screen groups, recurring schedules, conflict warnings and templates
+- Draft and Publish changes, config snapshots, audit history and undo
+- audience voting with permission and distance checks
+- aggregate play, viewer-time, skip and failure statistics
+
+Generated studio state is stored in `plugins/LuigiScreen/studio.yml`. Cached
+thumbnails are stored under `plugins/LuigiScreen/media/.thumbnails/`, and
+pre-publish backups are kept in `plugins/LuigiScreen/history/`.
+
 ## Playlists and events
 
 Playlists and events are defined in `config.yml`.
@@ -176,6 +211,8 @@ Playlists and events are defined in `config.yml`.
 ```yaml
 playlists:
   spawn_rotation:
+    history-window: 3
+    category-history-window: 1
     items:
       stream:
         type: rtmp
@@ -189,6 +226,8 @@ playlists:
         weight: 3
         duration: 20s
         cooldown: 2m
+        category: trailers
+        guaranteed-after: 30m
 
 events:
   update_reveal:
@@ -201,6 +240,10 @@ events:
         type: video
         value: "trailers/update.mp4"
         duration: 30s
+      operator:
+        type: wait-manual
+        text: "Waiting for operator"
+        duration: 1s
 ```
 
 Use them with:
@@ -215,9 +258,8 @@ When two screens select the same active source, LuigiScreen still shares one
 loader. Text event steps render an internal LuigiScreen frame and then return to
 the configured playlist or fallback source.
 
-Folder playlist entries are scanned and cached during startup or
-`/screen reload`. Run `/screen reload` after adding or removing files from a
-playlist folder.
+The Media Library watches local folders automatically. New, changed and removed
+files are validated and reflected in the GUI without `/screen reload`.
 
 ## Runtime performance
 

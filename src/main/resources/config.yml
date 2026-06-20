@@ -44,12 +44,16 @@ playback:
 playlists:
   example_rotation:
     default-duration: 30s
+    # Exclude recent items and categories before the weighted roll.
+    history-window: 3
+    category-history-window: 1
     items:
       main_stream:
         type: rtmp
         value: "rtmp://127.0.0.1:55556/screen"
         weight: 10
         duration: 60s
+        category: live
       random_media:
         type: folder
         folder: trailers
@@ -57,6 +61,9 @@ playlists:
         weight: 3
         duration: 20s
         cooldown: 2m
+        category: trailer
+        # If not selected for this long, it wins the next eligible roll.
+        guaranteed-after: 30m
         conditions:
           min-viewers: 1
 
@@ -74,6 +81,10 @@ events:
         type: video
         value: "trailers/announcement.mp4"
         duration: 25s
+      operator:
+        type: wait-manual
+        text: "Waiting for operator"
+        duration: 1s
 
 screen:
   # Defaults used by newly created screens and by the legacy config migration.

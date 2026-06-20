@@ -6,10 +6,10 @@
 
     <groupId>cz.luigismp</groupId>
     <artifactId>luigiscreen</artifactId>
-    <version>1.1.0-alpha.16</version>
+    <version>1.2.0-alpha.1</version>
     <packaging>jar</packaging>
     <name>LuigiScreen</name>
-    <description>A server-side Paper/Bukkit plugin for live RTMP video screens.</description>
+    <description>A server-side Paper/Bukkit media screen and broadcast control plugin.</description>
     <url>https://github.com/unknown-566/LuigiScreen</url>
 
     <developers>
@@ -148,6 +148,10 @@
                 <version>3.14.1</version>
                 <configuration>
                     <proc>none</proc>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <arg>-Xlint:deprecation</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

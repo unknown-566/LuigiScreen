@@ -45,6 +45,11 @@ class LanguageFilesTest {
             assertNotNull(language.getString("updates.available"));
             assertNotNull(language.getString("updates.open-modrinth"));
             assertNotNull(language.getString("logs.update-available"));
+            assertNotNull(language.getString("studio.dashboard"));
+            assertNotNull(language.getString("studio.why-playing"));
+            assertNotNull(language.getString("studio.confirm-emergency"));
+            assertNotNull(language.getString("studio.publish"));
+            assertNotNull(language.getString("commands.help-menu"));
             assertEquals("LuigiScreen", language.getString("screen.offline-title"));
         }
     }

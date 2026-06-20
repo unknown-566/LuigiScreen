@@ -24,6 +24,9 @@ public final class ScreenPermissions {
             Map.entry("set", "luigiscreen.set"),
             Map.entry("reload", "luigiscreen.reload"),
             Map.entry("debug", "luigiscreen.debug"),
+            Map.entry("menu", "luigiscreen.menu.dashboard"),
+            Map.entry("studio", "luigiscreen.menu.dashboard"),
+            Map.entry("vote", "luigiscreen.vote"),
             Map.entry("mediamtx", "luigiscreen.mediamtx")
     );
 

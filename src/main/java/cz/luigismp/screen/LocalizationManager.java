@@ -79,6 +79,13 @@ final class LocalizationManager {
         return plainText.serialize(component(key, placeholders));
     }
 
+    String plainOr(String key, String fallbackValue) {
+        if (messages.contains(key) || fallback.contains(key)) {
+            return plain(key);
+        }
+        return fallbackValue;
+    }
+
     void send(CommandSender sender, String key, Object... placeholders) {
         sender.sendMessage(prefixed(key, placeholders));
     }

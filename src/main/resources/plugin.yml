@@ -8,9 +8,9 @@ description: A server-side Paper/Bukkit plugin for live media map screens.
 
 commands:
   luigiscreen:
-    description: Manage LuigiScreen live screens.
+    description: Manage LuigiScreen media screens and Control Studio.
     aliases: [screen]
-    usage: /screen <create|clone|list|start|stop|remove|status|source|playlist|event|set|reload|debug|mediamtx>
+    usage: /screen <menu|create|clone|list|start|stop|remove|status|source|playlist|event|vote|set|reload|debug|mediamtx>
 
 permissions:
   luigiscreen.admin:
@@ -32,6 +32,8 @@ permissions:
       luigiscreen.debug: true
       luigiscreen.mediamtx: true
       luigiscreen.update: true
+      luigiscreen.vote: true
+      luigiscreen.menu.*: true
       luigiscreen.see.*: true
   luigiscreen.create:
     description: Allows creating screens.
@@ -78,6 +80,65 @@ permissions:
   luigiscreen.update:
     description: Receives notifications when a newer LuigiScreen version is available.
     default: op
+  luigiscreen.menu.*:
+    description: Grants access to every LuigiScreen Control Studio section.
+    default: false
+    children:
+      luigiscreen.menu.dashboard: true
+      luigiscreen.menu.screens: true
+      luigiscreen.menu.media: true
+      luigiscreen.menu.playlists: true
+      luigiscreen.menu.events: true
+      luigiscreen.menu.live: true
+      luigiscreen.menu.groups: true
+      luigiscreen.menu.schedules: true
+      luigiscreen.menu.templates: true
+      luigiscreen.menu.diagnostics: true
+      luigiscreen.menu.history: true
+      luigiscreen.menu.emergency: true
+      luigiscreen.menu.control: true
+  luigiscreen.menu.dashboard:
+    description: Opens LuigiScreen Control Studio.
+    default: op
+  luigiscreen.menu.screens:
+    description: Views screens and their details in Control Studio.
+    default: false
+  luigiscreen.menu.media:
+    description: Views and cues Media Library sources.
+    default: false
+  luigiscreen.menu.playlists:
+    description: Views, simulates and assigns playlists.
+    default: false
+  luigiscreen.menu.events:
+    description: Views and starts event timelines.
+    default: false
+  luigiscreen.menu.live:
+    description: Uses Live Control Room.
+    default: false
+  luigiscreen.menu.groups:
+    description: Controls screen groups.
+    default: false
+  luigiscreen.menu.schedules:
+    description: Views the schedule calendar.
+    default: false
+  luigiscreen.menu.templates:
+    description: Installs starter templates.
+    default: false
+  luigiscreen.menu.diagnostics:
+    description: Views screen diagnostics.
+    default: false
+  luigiscreen.menu.history:
+    description: Views the studio audit history.
+    default: false
+  luigiscreen.menu.emergency:
+    description: Enables or disables global emergency mode.
+    default: false
+  luigiscreen.menu.control:
+    description: Changes playback and screen state from menus.
+    default: false
+  luigiscreen.vote:
+    description: Allows a player to vote in active LuigiScreen media votes.
+    default: true
   luigiscreen.see.*:
     description: Allows viewing every permission-protected screen.
     default: false
