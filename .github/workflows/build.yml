@@ -25,3 +25,10 @@ jobs:
 
       - name: Verify
         run: mvn --batch-mode --no-transfer-progress verify
+
+      - name: Verify shaded Bytedeco metadata
+        shell: bash
+        run: |
+          jar tf target/LuigiScreen-*.jar > target/jar-entries.txt
+          grep -Fx 'META-INF/maven/org.bytedeco/ffmpeg/pom.properties' target/jar-entries.txt
+          grep -Fx 'META-INF/maven/org.bytedeco/javacpp/pom.properties' target/jar-entries.txt

@@ -237,9 +237,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.15`
+**Version number:** `1.1.0-alpha.16`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.15`
+**Version title:** `LuigiScreen 1.1.0-alpha.16`
 
 **Release channel:** Alpha
 
@@ -252,15 +252,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.15.jar
+LuigiScreen-1.1.0-alpha.16.jar
 ```
 
-**File size:** 55,255,919 bytes
+**File size:** 55,274,631 bytes
 
 **SHA-256:**
 
 ```text
-301174845CCDC43EF7483BDE4AD2EAADEA52154C7F0FA3E3951F5A2756A64787
+5B3B68BB9B5BA0B851CF325C5D5496CD7FB199EEF414EEA32F6129A9868366F0
 ```
 
 **Dependency:**
@@ -270,17 +270,16 @@ LuigiScreen-1.1.0-alpha.15.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.15
+## LuigiScreen 1.1.0-alpha.16
 
-### Update notifications
+### Runtime metadata fix
 
-- Added a non-blocking Modrinth update checker
-- Added one-time console notifications when a newer public version is available
-- Added clickable player notifications controlled by `luigiscreen.update`
-- Added semantic ordering for alpha, beta and release versions
-- Added configurable project slug/ID, check interval, timeout and notification settings
-- Added quiet handling for an unpublished Modrinth project and optional failure logging
-- Restarted the checker safely during `/screen reload`
+- Restored the Maven metadata JavaCPP uses to identify the bundled FFmpeg version
+- Fixed `Version of org.bytedeco:ffmpeg could not be found` during startup
+- Prevented Paper's related `System.out/err.print` nag warning
+- Kept duplicate classifier metadata excluded while retaining the required base metadata
+- Added a GitHub Actions check that fails if FFmpeg or JavaCPP metadata is missing again
+- Verified JavaCPP reports bundled FFmpeg version `7.1.1-1.5.12`
 - 54 automated tests
 
 ### Platform support
@@ -357,7 +356,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.15` uploaded as Alpha
+- [ ] `1.1.0-alpha.16` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible
