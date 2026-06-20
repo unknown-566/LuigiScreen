@@ -1,5 +1,17 @@
 language: cs
 
+updates:
+  # Checks the public Modrinth project without blocking the server thread.
+  enabled: true
+  project: luigiscreen
+  modrinth-url: "https://modrinth.com/plugin/luigiscreen"
+  check-interval-hours: 6
+  timeout-seconds: 10
+  notify-console: true
+  notify-players: true
+  # A missing/unpublished project returns 404 and is always ignored quietly.
+  log-failures: false
+
 stream:
   # Legacy RTMP default kept for MediaMTX compatibility.
   url: "rtmp://127.0.0.1:55556/screen"

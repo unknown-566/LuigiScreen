@@ -225,7 +225,13 @@ mediamtx:
       Tento soubor uchovávej v soukromí. Obsahuje vygenerované přihlašovací údaje.
       RTSP, HLS, WebRTC, SRT a MoQ jsou vypnuté.
 
+updates:
+  available: "<yellow>Je dostupná novější verze LuigiScreen: <white><current> -> <latest></white>. Kliknutím otevřeš Modrinth.</yellow>"
+  open-modrinth: "<aqua>Otevřít stránku LuigiScreen na Modrinthu</aqua>"
+
 logs:
+  update-available: "Je dostupná novější verze LuigiScreen: <current> -> <latest>. <url>"
+  update-check-failed: "Kontrola aktualizací na Modrinthu selhala: <error>"
   render-failed-screen: "Vykreslení plátna <screen> přes MapEngine selhalo: <error>"
   saved-screen-invalid-name: "Uložené plátno <screen> je neplatné a bylo přeskočeno."
   legacy-migrated: "Staré samostatné plátno bylo převedeno na screens.main."

@@ -30,6 +30,7 @@ renders it through MapEngine. Players do not need a client mod.
 - Granular permission for every management command
 - Optional `luigiscreen.see.<screen>` visibility permission per screen
 - Performance boss bar and debug sidebar
+- Asynchronous Modrinth update notifications for the console and authorized players
 - Persistent screen configuration
 - Masked remote-source credentials in plugin output
 - Windows x86_64 and Linux x86_64 FFmpeg natives
@@ -93,6 +94,11 @@ access to all protected screens. Individual permissions include
 `luigiscreen.stop`, `luigiscreen.status` and equivalent nodes for the other
 commands.
 
+`luigiscreen.update` receives a clickable notification when a newer public
+version is available on Modrinth. It defaults to operators and is included in
+`luigiscreen.admin`. The asynchronous checker can be configured or disabled
+under `updates:` in `config.yml`.
+
 Screens are public by default. Enable protection with:
 
 ```text
@@ -114,7 +120,7 @@ The shaded plugin JAR is created in `target/`.
 
 ## Verification
 
-The current suite contains 48 automated tests covering:
+The current suite contains 54 automated tests covering:
 
 - RTMP URL and error-message sanitization
 - Screen corner calculation for every vertical direction
@@ -130,6 +136,8 @@ The current suite contains 48 automated tests covering:
 - Localization files and debug text formatting
 - Duration parsing for playlist and event timing
 - Zero-copy MapEngine render-surface wrapping
+- Semantic alpha, beta and release version ordering
+- Modrinth version-feed selection
 
 ## Platform limits
 

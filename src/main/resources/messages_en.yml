@@ -226,7 +226,13 @@ mediamtx:
       Keep this file private. It contains generated stream credentials.
       RTSP, HLS, WebRTC, SRT and MoQ are disabled.
 
+updates:
+  available: "<yellow>A newer LuigiScreen version is available: <white><current> -> <latest></white>. Click this message to open Modrinth.</yellow>"
+  open-modrinth: "<aqua>Open the LuigiScreen page on Modrinth</aqua>"
+
 logs:
+  update-available: "A newer LuigiScreen version is available: <current> -> <latest>. <url>"
+  update-check-failed: "Could not check Modrinth for updates: <error>"
   reload-stop-failed: "Reload cancelled because a source worker did not stop."
   reload-success: "Configuration, language and screen were reloaded."
   reload-failed: "Could not reload LuigiScreen: <error>"

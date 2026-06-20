@@ -42,6 +42,9 @@ class LanguageFilesTest {
             assertNotNull(language.getString("debug.memory"));
             assertNotNull(language.getString("mediamtx.setup-header"));
             assertNotNull(language.getString("screen.offline"));
+            assertNotNull(language.getString("updates.available"));
+            assertNotNull(language.getString("updates.open-modrinth"));
+            assertNotNull(language.getString("logs.update-available"));
             assertEquals("LuigiScreen", language.getString("screen.offline-title"));
         }
     }

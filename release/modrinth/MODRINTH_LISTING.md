@@ -94,6 +94,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Granular permissions for every management command
 - Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar and debug sidebar
+- Optional asynchronous Modrinth update notifications
 - Persistent screen configuration across restarts
 - Masked remote-source credentials in commands and plugin logs
 - Bundled FFmpeg natives for Windows x86_64 and Linux x86_64
@@ -236,9 +237,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.1.0-alpha.14`
+**Version number:** `1.1.0-alpha.15`
 
-**Version title:** `LuigiScreen 1.1.0-alpha.14`
+**Version title:** `LuigiScreen 1.1.0-alpha.15`
 
 **Release channel:** Alpha
 
@@ -251,15 +252,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.1.0-alpha.14.jar
+LuigiScreen-1.1.0-alpha.15.jar
 ```
 
-**File size:** 55,241,604 bytes
+**File size:** 55,255,919 bytes
 
 **SHA-256:**
 
 ```text
-D8FDAD406114766DDCAC9C95694C15EF45C32A635E1951001808B2CC529AFBDD
+301174845CCDC43EF7483BDE4AD2EAADEA52154C7F0FA3E3951F5A2756A64787
 ```
 
 **Dependency:**
@@ -269,23 +270,18 @@ D8FDAD406114766DDCAC9C95694C15EF45C32A635E1951001808B2CC529AFBDD
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.1.0-alpha.14
+## LuigiScreen 1.1.0-alpha.15
 
-### Performance and reliability
+### Update notifications
 
-- Reused the MapEngine render surface instead of rebuilding a raster and color model for every frame
-- Reused delta frame buffers in place, substantially reducing per-screen garbage collection pressure
-- Captured player positions once per viewer refresh and shared the snapshot across all screens
-- Cached playlist folder contents during startup and `/screen reload` instead of scanning the disk during playback
-- Reduced static image worker wakeups and cached immutable worker settings outside background threads
-- Loop local videos and GIFs by seeking before falling back to a decoder reconnect
-- Save `config.yml` once for `/screen start all` and `/screen stop all`
-- Fixed newly created and cloned screens not being saved immediately
-- Added configurable FFmpeg I/O and safe worker shutdown timeouts
-- Enforced the image byte limit for local files and pre-sized remote image downloads
-- Protected the shared render scheduler from one screen terminating the entire render loop
-- Removed unused duplicate build metadata while retaining Windows and Linux native libraries and licenses
-- 48 automated tests
+- Added a non-blocking Modrinth update checker
+- Added one-time console notifications when a newer public version is available
+- Added clickable player notifications controlled by `luigiscreen.update`
+- Added semantic ordering for alpha, beta and release versions
+- Added configurable project slug/ID, check interval, timeout and notification settings
+- Added quiet handling for an unpublished Modrinth project and optional failure logging
+- Restarted the checker safely during `/screen reload`
+- 54 automated tests
 
 ### Platform support
 
@@ -302,6 +298,7 @@ D8FDAD406114766DDCAC9C95694C15EF45C32A635E1951001808B2CC529AFBDD
 - MediaMTX and a publisher are only required for RTMP
 - Events are manual commands in this alpha; automatic triggers are planned later
 - Playlist folders are refreshed during startup or `/screen reload`
+- Only versions visible through the public Modrinth API can be detected
 - Every screen still adds MapEngine render and packet cost even when decoding is shared
 
 Read the [installation guide](https://unknown-56-works.gitbook.io/luigiscreen/getting-started/installation) before installing.
@@ -360,7 +357,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.1.0-alpha.14` uploaded as Alpha
+- [ ] `1.1.0-alpha.15` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

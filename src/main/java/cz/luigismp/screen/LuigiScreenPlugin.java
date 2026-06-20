@@ -50,6 +50,7 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     private DebugBossBarManager debugBossBars;
     private MediaMtxSetupManager mediaMtxSetup;
     private PlaybackController playbackController;
+    private ModrinthUpdateChecker updateChecker;
     private LocalizationManager messages;
     private BukkitTask viewerTask;
     private BukkitTask streamRestartTask;
@@ -92,6 +93,8 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         playbackController.activate();
         startEnabledSources();
         playbackController.start();
+        updateChecker = new ModrinthUpdateChecker(this);
+        updateChecker.start();
     }
 
     @Override
@@ -108,6 +111,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
         }
         if (playbackController != null) {
             playbackController.stop();
+        }
+        if (updateChecker != null) {
+            updateChecker.stop();
         }
         requestStopAllSources();
         stopAllSources();
@@ -440,6 +446,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
 
     boolean reloadScreenConfig() {
         cancelPendingStreamRestart();
+        if (updateChecker != null) {
+            updateChecker.stop();
+        }
         if (playbackController != null) {
             playbackController.stop();
         }
@@ -448,6 +457,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             getLogger().severe(messages.plain("logs.reload-stop-failed"));
             if (playbackController != null) {
                 playbackController.start();
+            }
+            if (updateChecker != null) {
+                updateChecker.start();
             }
             return false;
         }
@@ -474,6 +486,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             if (debugBossBars != null) {
                 debugBossBars.start();
             }
+            if (updateChecker != null) {
+                updateChecker.start();
+            }
             getLogger().info(messages.plain("logs.reload-success"));
             return true;
         } catch (Exception exception) {
@@ -485,6 +500,9 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
             startEnabledSources();
             if (playbackController != null) {
                 playbackController.start();
+            }
+            if (updateChecker != null) {
+                updateChecker.start();
             }
             return false;
         }
@@ -1193,6 +1211,12 @@ public final class LuigiScreenPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Bukkit.getScheduler().runTaskLater(this, this::refreshViewers, 20L);
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (player.isOnline() && updateChecker != null) {
+                updateChecker.notifyPlayer(player);
+            }
+        }, 40L);
     }
 
     @EventHandler

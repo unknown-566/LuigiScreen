@@ -67,8 +67,11 @@ class ScreenPermissionsTest {
         assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.event"));
         assertTrue(plugin.getBoolean(
+                "permissions.luigiscreen.admin.children.luigiscreen.update"));
+        assertTrue(plugin.getBoolean(
                 "permissions.luigiscreen.admin.children.luigiscreen.see.*"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.create.default"));
+        assertEquals("op", plugin.getString("permissions.luigiscreen.update.default"));
         assertFalse(plugin.getBoolean("permissions.luigiscreen.see.*.default"));
     }
 
