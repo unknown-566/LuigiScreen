@@ -17,7 +17,7 @@ renders it through MapEngine. Players do not need a client mod.
 - Browser Web Studio opened securely with `/screen web`
 - One-time login links, revocable sessions, CSRF protection and role-based API access
 - Preview/Program Live Studio with bounded live source thumbnails
-- Contextual `i` help for Web Studio settings, metrics and controls
+- Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, screen details, Live Control Room and diagnostics
 - Media Library with automatic folder watching, validation and map thumbnails
 - Draft and Publish editing with config snapshots and one-click undo
@@ -217,7 +217,8 @@ server listens on `127.0.0.1:8765` by default and provides dashboards, screen
 details, Media Library, playlist and event editors, Preview/Program Live
 Studio, schedules, groups, monitoring, diagnostics and structured drafts.
 
-Every property and field includes contextual `i` help. Live state uses a
+Every property and field includes contextual hover help and an accessible
+description without filling the interface with permanent icons. Live state uses a
 compact server-sent event stream, while preview capture is downscaled,
 rate-limited and inactive when no browser is connected.
 

@@ -78,7 +78,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - In-game Control Studio with role-based access
 - Secure browser Web Studio with one-time login links and revocable sessions
 - Preview/Program Live Studio with bounded live source thumbnails
-- Contextual `i` help throughout Web Studio
+- Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, Live Control Room, queues and playback explanations
 - Watched Media Library with validation and generated map thumbnails
 - Draft/Publish editing, audit history, snapshots and undo
@@ -246,9 +246,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.2.0-alpha.2`
+**Version number:** `1.2.0-alpha.3`
 
-**Version title:** `LuigiScreen 1.2.0-alpha.2 - Web Studio`
+**Version title:** `LuigiScreen 1.2.0-alpha.3 - Web Studio Refinement`
 
 **Release channel:** Alpha
 
@@ -261,15 +261,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.2.0-alpha.2.jar
+LuigiScreen-1.2.0-alpha.3.jar
 ```
 
-**File size:** 55,452,507 bytes
+**File size:** 55,454,575 bytes
 
 **SHA-256:**
 
 ```text
-5153287C0C92F7410697D0249AAE68F016105002F59443013B1849B8BC489E94
+3944F1BC31827C8F09502C37A65566AE7F1FC92D111515DE877B93EFE66DB21B
 ```
 
 **Dependency:**
@@ -279,7 +279,7 @@ LuigiScreen-1.2.0-alpha.2.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.2.0-alpha.2
+## LuigiScreen 1.2.0-alpha.3
 
 ### Web Studio
 
@@ -287,7 +287,9 @@ LuigiScreen-1.2.0-alpha.2.jar
 - Added dashboard, screen grid, Media Library, playlist/event editors and inspector
 - Added Preview/Program Live Studio, Take Live, queues and playback controls
 - Added schedules, screen groups, monitoring, diagnostics and emergency control
-- Added contextual `i` help to settings, fields, metrics and table columns
+- Removed permanent info icons and moved help to clean hover targets and accessible descriptions
+- Refined navigation, cards, panels, tables and the responsive workspace
+- Hid the inspector until an object is selected, giving content more room
 - Added one-time login links, HttpOnly sessions, CSRF/origin protection and revocation
 - Added capability-based browser roles copied from the issuing Minecraft player
 - Added per-session drafts, typed validation, snapshots and safe Publish
@@ -371,7 +373,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.2.0-alpha.2` uploaded as Alpha
+- [ ] `1.2.0-alpha.3` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

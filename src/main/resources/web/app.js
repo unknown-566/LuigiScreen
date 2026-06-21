@@ -27,7 +27,7 @@
   })[char]);
   const lang = () => app.state?.config?.language?.toLowerCase().startsWith("cs") ? "cs" : "en";
   const tx = (en, cs) => lang() === "cs" ? cs : en;
-  const info = (en, cs = en) => `<span class="info" tabindex="0" data-help="${esc(tx(en, cs))}">i</span>`;
+  const info = (en, cs = en) => `<span class="help-copy" data-help="${esc(tx(en, cs))}" aria-hidden="true"></span>`;
   const fmt = value => new Intl.NumberFormat(lang() === "cs" ? "cs-CZ" : "en-US", { maximumFractionDigits: 2 }).format(Number(value || 0));
   const bytes = value => {
     let size = Number(value || 0); const units = ["B", "KB", "MB", "GB"]; let index = 0;
@@ -192,8 +192,8 @@
     if (!resetScroll) $(".workspace").scrollTop = scroll;
   }
 
-  const metric = (label, value, note, helpEn, helpCs, tone = "") => `<div class="metric ${tone}"><label>${esc(label)} ${info(helpEn, helpCs)}</label><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
-  const panelHead = (title, helpEn, helpCs, aside = "") => `<div class="panel-head"><h2>${esc(title)} ${info(helpEn, helpCs)}</h2>${aside}</div>`;
+  const metric = (label, value, note, helpEn, helpCs, tone = "") => `<div class="metric ${tone}" data-help="${esc(tx(helpEn, helpCs))}"><label>${esc(label)}</label><strong>${esc(value)}</strong><small>${esc(note)}</small></div>`;
+  const panelHead = (title, helpEn, helpCs, aside = "") => `<div class="panel-head"><div class="panel-heading-copy"><h2>${esc(title)}</h2><small>${esc(tx(helpEn, helpCs))}</small></div>${aside}</div>`;
   const empty = (en, cs) => `<div class="empty">${esc(tx(en, cs))}</div>`;
 
   function renderDashboard() {
@@ -377,6 +377,7 @@
 
   function renderInspector() {
     const box=$("#inspectorContent"), title=$("#inspectorTitle");
+    $("#app").classList.toggle("inspector-active", Boolean(app.selected));
     if(!app.selected){title.textContent=tx("Nothing selected","Nic není vybrané");box.innerHTML=`<p class="muted">${tx("Select an object in the workspace to inspect it here.","Vyber objekt v pracovní ploše a zde uvidíš jeho detail.")}</p>`;return;}
     if(app.selected.type==="screen") return inspectScreen(screenById(app.selected.id));
     if(app.selected.type==="media") return inspectMedia(app.state.media.find(item=>item.id===app.selected.id));
@@ -464,12 +465,13 @@
   function mediaOptions(){const options=app.state.media.filter(item=>item.valid).map(item=>`<option value="${esc(item.id)}">${esc(item.id)}</option>`).join("");return options||`<option value="">${tx("No valid media", "Žádná platná média")}</option>`;}
   function targetScreen(id){const direct=screenById(id);if(direct)return direct;const group=app.state?.groups?.find(item=>item.id===id);return group?.screens?.map(screenById).find(Boolean);}
   function decorateHelp(root){
-    root.querySelectorAll('[data-help]:not(.info)').forEach(element=>{if(element.dataset.helpDecorated)return;element.dataset.helpDecorated="true";element.appendChild(infoBadge(element.dataset.help));element.removeAttribute("data-help");});
-    root.querySelectorAll('.property > span:first-child, .field > label, .card-meta > span, th').forEach(element=>{if(element.querySelector('.info'))return;const label=element.childNodes[0]?.textContent?.trim()||element.textContent.trim();element.appendChild(infoBadge(fallbackHelp(label)));});
+    root.querySelectorAll('.help-copy').forEach(copy=>{const target=copy.parentElement;attachHelp(target,copy.dataset.help);copy.remove();});
+    root.querySelectorAll('[data-help]').forEach(element=>{attachHelp(element,element.dataset.help);element.removeAttribute("data-help");});
+    root.querySelectorAll('.property > span:first-child, .field > label, .card-meta > span, th').forEach(element=>{if(element.title)return;const label=element.childNodes[0]?.textContent?.trim()||element.textContent.trim();attachHelp(element,fallbackHelp(label));});
   }
-  function infoBadge(help){const badge=document.createElement("span");badge.className="info";badge.tabIndex=0;badge.dataset.help=help;badge.textContent="i";return badge;}
+  function attachHelp(element,help){if(!element||!help)return;element.title=help;element.setAttribute("aria-description",help);element.classList.add("has-help");}
   function fallbackHelp(label){const key=label.toLowerCase();const explanations={state:["Current runtime state reported by the plugin.","Aktuální provozní stav hlášený pluginem."],content:["Media or logical step currently controlling the display.","Médium nebo krok, který právě řídí plátno."],controller:["The playlist, event or direct source responsible for playback.","Playlist, event nebo přímý zdroj odpovědný za přehrávání."],error:["Last sanitized problem reported by this subsystem.","Poslední očištěný problém hlášený touto částí."],type:["The typed source or operation category.","Typ zdroje nebo kategorie operace."],resolution:["Pixel width and height detected from the source.","Šířka a výška zdroje v pixelech."],size:["Stored file size on the server.","Velikost souboru uloženého na serveru."],validation:["Whether the value can be safely used by LuigiScreen.","Zda může LuigiScreen tuto hodnotu bezpečně použít."],"used by":["Configured playlists and events referencing this item.","Playlisty a eventy, které tuto položku používají."],probability:["Estimated chance after weights and eligibility rules.","Odhadovaná šance po vyhodnocení vah a pravidel."],conditions:["Rules that must pass before this item is eligible.","Pravidla, která musí položka splnit před výběrem."],weight:["Relative selection weight among eligible items.","Relativní váha výběru mezi způsobilými položkami."],duration:["How long this item or stage remains active.","Jak dlouho položka nebo krok zůstane aktivní."],cooldown:["Minimum delay before an item may be selected again.","Minimální prodleva před dalším možným výběrem."],enabled:["Whether this object participates in live operation.","Zda se objekt účastní živého provozu."],source:["Media input currently assigned to the screen.","Mediální vstup aktuálně přiřazený plátnu."],performance:["Rendering speed and frame processing cost.","Rychlost vykreslování a cena zpracování snímků."],location:["Stored Minecraft world and block coordinates.","Uložený svět Minecraftu a souřadnice bloků."],"now playing":["Item players are receiving right now.","Položka, kterou hráči právě přijímají."],viewers:["Players currently eligible and close enough to receive this screen.","Hráči, kteří mají oprávnění a jsou dostatečně blízko plátnu."],output:["Physical map dimensions of the screen.","Fyzické mapové rozměry plátna."],"actual fps":["Frames actually rendered after adaptive limits.","Snímky skutečně vykreslené po adaptivním omezení."]};const pair=explanations[key]||["Explains the value or control shown next to this icon.","Vysvětluje hodnotu nebo ovládací prvek vedle této ikony."];return lang()==="cs"?pair[1]:pair[0];}
-  function openInspector(){if(innerWidth<=900)$("#inspector").classList.add("open");}
+  function openInspector(){$("#app").classList.add("inspector-active");if(innerWidth<=900)$("#inspector").classList.add("open");}
   function toast(message,error=false){const item=document.createElement("div");item.className=`toast ${error?"error":""}`;item.textContent=message;$("#toasts").append(item);setTimeout(()=>item.remove(),4200);}
   function ask(title,text,callback){app.confirmAction=callback;$("#confirmTitle").textContent=title;$("#confirmText").textContent=text;$("#confirmModal").hidden=false;}
 
@@ -487,7 +489,7 @@
 
   $$('[data-view]').forEach(button=>button.onclick=()=>{app.view=button.dataset.view;app.detailScreen=null;app.selected=null;render();if(innerWidth<=900)$("#sidebar").classList.remove("open");});
   $("#sidebarToggle").onclick=()=>innerWidth<=900?$("#sidebar").classList.toggle("open"):$("#app").classList.toggle("collapsed");
-  $("#closeInspector").onclick=()=>$("#inspector").classList.remove("open");
+  $("#closeInspector").onclick=()=>{app.selected=null;$("#inspector").classList.remove("open");$("#app").classList.remove("inspector-active");renderInspector();};
   $("#commandTrigger").onclick=openPalette;
   $("#commandInput").oninput=renderPalette;
   $("#commandPalette").onclick=event=>{if(event.target===$("#commandPalette"))closePalette();};

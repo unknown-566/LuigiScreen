@@ -27,8 +27,13 @@ class StudioWebResourcesTest {
         assertTrue(html.contains("id=\"mobileControl\""));
         assertTrue(javascript.contains("new EventSource(\"/api/events\")"));
         assertTrue(javascript.contains("data-help"));
-        assertTrue(javascript.contains("class=\"info\""));
-        assertTrue(css.contains(".info:hover::after"));
+        assertTrue(javascript.contains("class=\"help-copy\""));
+        assertTrue(javascript.contains("function attachHelp"));
+        assertTrue(css.contains(".help-copy { display: none"));
+        assertTrue(css.contains(".app-shell.inspector-active"));
+        assertTrue(css.contains(".sidebar nav button b { display: none; }"));
+        assertFalse(javascript.contains(">i</span>"));
+        assertFalse(css.contains(".info:hover::after"));
         assertTrue(css.contains("@media (max-width: 900px)"));
         assertFalse(javascript.contains("rtmp://"));
     }
