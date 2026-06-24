@@ -522,7 +522,8 @@ final class StudioWebServer {
         String action = form.getOrDefault("action", "");
         String screen = ScreenDefinition.normalizeId(form.get("screen"));
         boolean needsScreen = action.startsWith("screen.") || action.startsWith("playback.")
-                || action.equals("playlist.assign") || action.startsWith("event.play")
+                || action.equals("playlist.assign") || action.equals("playlist.clear")
+                || action.startsWith("event.play")
                 || action.startsWith("event.stop") || action.equals("conditions.test");
         if (needsScreen && !plugin.hasScreen(screen)) {
             return ActionResult.fail("Screen not found.");
@@ -622,7 +623,13 @@ final class StudioWebServer {
                 }
                 boolean ok = plugin.setScreenPlaylist(screen,
                         ScreenDefinition.normalizeId(form.get("playlist")));
-                yield result(ok, "Playlist assigned.");
+                yield result(ok, "Playlist assigned and started.");
+            }
+            case "playlist.clear" -> {
+                if (!session.can("playlists") && !session.can("control")) {
+                    yield ActionResult.denied();
+                }
+                yield result(plugin.clearScreenPlaylist(screen), "Playlist cleared.");
             }
             case "event.play" -> {
                 if (!session.can("events") && !session.can("control")) {

@@ -30,8 +30,16 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("class=\"help-copy\""));
         assertTrue(javascript.contains("function renderLaunchpad"));
         assertTrue(javascript.contains("data-jump"));
+        assertTrue(javascript.contains("data-screen-tab"));
+        assertTrue(javascript.contains("function renderScreenAutomation"));
+        assertTrue(javascript.contains("data-assign-playlist"));
+        assertTrue(javascript.contains("data-clear-playlist"));
+        assertTrue(javascript.contains("playlist.clear"));
+        assertTrue(javascript.contains("data-start-event-detail"));
         assertTrue(css.contains(".launchpad"));
         assertTrue(css.contains(".launch-step.active"));
+        assertTrue(css.contains(".screen-tabs"));
+        assertTrue(css.contains(".nested-panel"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));
         assertTrue(css.contains(".app-shell.inspector-active"));

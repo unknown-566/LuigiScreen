@@ -475,6 +475,12 @@ h1 { margin: 6px 0 7px; font-size: clamp(28px, 3vw, 40px); font-weight: 650; }
 .view-switch { border-color: #30373e; border-radius: 6px; background: #0d1013; }
 .view-switch button { padding: 9px 13px; }
 .view-switch button.active { background: #273322; color: #ddffaa; }
+.screen-detail-panel { overflow: visible; }
+.screen-tabs { width: fit-content; margin-bottom: 16px; }
+.screen-tabs button { min-width: 104px; }
+.screen-tab-content { margin-top: 4px; }
+.nested-panel { margin-bottom: 0; background: linear-gradient(145deg, #12171b, #0d1114); }
+.nested-panel .panel-head { margin-bottom: 12px; }
 
 table { min-width: 680px; font-size: 12px; }
 th { padding: 11px 10px; color: #69736f; border-bottom-color: #30373e; }
