@@ -144,17 +144,62 @@ final class StudioWebServer {
                 + " (" + security.activeSessions() + " sessions)";
     }
 
+    synchronized boolean ensureLanAccess() {
+        FileConfiguration config = plugin.getConfig();
+        boolean changed = false;
+        if (!config.getBoolean("web-studio.enabled", true)) {
+            config.set("web-studio.enabled", true);
+            changed = true;
+        }
+        String publicUrl = Objects.requireNonNullElse(
+                config.getString("web-studio.public-url"), "").trim();
+        String bind = Objects.requireNonNullElse(
+                config.getString("web-studio.bind"), "127.0.0.1").trim();
+        if (publicUrl.isBlank() && StudioWebAccess.isLoopbackBind(bind)) {
+            config.set("web-studio.bind", "0.0.0.0");
+            changed = true;
+        }
+        if (changed) {
+            plugin.saveConfig();
+        }
+        if (changed || server == null) {
+            reload();
+        }
+        return changed;
+    }
+
     String createLoginLink(CommandSender sender) {
+        List<StudioWebAccess.Link> links = createLoginLinks(sender);
+        return links.isEmpty() ? null : links.getFirst().url();
+    }
+
+    List<StudioWebAccess.Link> createLoginLinks(CommandSender sender) {
         Settings value = settings;
-        if (server == null || value == null) return null;
+        if (server == null || value == null) return List.of();
         Set<String> capabilities = capabilities(sender);
         String token = security.issueLogin(sender.getName(), capabilities,
                 Duration.ofMinutes(value.loginMinutes()));
-        return value.baseUrl() + "/login?token=" + token;
+        return StudioWebAccess.loginLinks(value.publicUrl(), value.bind(), value.port(), token);
     }
 
     int revoke(CommandSender sender) {
         return security.revokeActor(sender.getName());
+    }
+
+    Map<String, Object> accessSummary() {
+        Settings value = settings == null ? Settings.read(plugin.getConfig()) : settings;
+        boolean lanReady = value.enabled()
+                && (!StudioWebAccess.isLoopbackBind(value.bind())
+                || !value.publicUrl().isBlank());
+        return Map.of(
+                "enabled", value.enabled(),
+                "running", server != null,
+                "bind", value.bind(),
+                "port", value.port(),
+                "publicUrl", value.publicUrl(),
+                "lanReady", lanReady,
+                "lanHosts", StudioWebAccess.lanHosts(),
+                "status", status());
     }
 
     boolean previewRequested() {
@@ -995,10 +1040,8 @@ final class StudioWebServer {
 
         String baseUrl() {
             if (!publicUrl.isBlank()) return publicUrl;
-            String host = bind.equals("0.0.0.0") || bind.equals("::")
-                    ? "127.0.0.1" : bind;
-            if (host.contains(":")) host = "[" + host + "]";
-            return "http://" + host + ":" + port;
+            String host = StudioWebAccess.isWildcardBind(bind) ? "127.0.0.1" : bind;
+            return StudioWebAccess.url(host, port);
         }
 
         String publicOrigin() {

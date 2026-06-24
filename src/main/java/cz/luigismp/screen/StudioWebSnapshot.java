@@ -50,6 +50,7 @@ final class StudioWebSnapshot {
         root.put("upcoming", schedules.stream().limit(8).toList());
         root.put("audit", plugin.studio().audit().stream().limit(30).toList());
         root.put("emergency", plugin.studio().emergency());
+        root.put("web", webSummary());
         root.put("config", configSummary());
         return root;
     }
@@ -336,6 +337,14 @@ final class StudioWebSnapshot {
                 "maxMapUpdates", plugin.getConfig().getInt(
                         "performance.max-map-updates-per-second", 400),
                 "mediaDirectory", plugin.mediaDirectoryDisplay());
+    }
+
+    private Map<String, Object> webSummary() {
+        StudioWebServer web = plugin.webStudio();
+        if (web == null) {
+            return Map.of("enabled", false, "running", false, "lanReady", false);
+        }
+        return web.accessSummary();
     }
 
     private Map<String, Object> statistics(StudioStatistics value) {

@@ -92,6 +92,22 @@ h3 { font-size: 13px; letter-spacing: .01em; }
 .loader span { display: block; width: 34px; height: 34px; border: 2px solid var(--line); border-top-color: var(--green); border-radius: 50%; margin: 0 auto 14px; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.launchpad { position: relative; display: grid; grid-template-columns: minmax(260px, .75fr) 1.25fr; gap: 16px; margin-bottom: 18px; padding: 18px; overflow: hidden; border: 1px solid #254058; border-radius: 16px; background:
+  radial-gradient(circle at 0 0, rgba(76,167,255,.18), transparent 34%),
+  linear-gradient(135deg, rgba(21,34,47,.98), rgba(11,17,24,.98)); box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+.launchpad::after { content:""; position:absolute; right:-80px; top:-120px; width:260px; height:260px; border:1px solid rgba(112,206,161,.18); transform:rotate(35deg); }
+.launch-copy { position:relative; z-index:1; display:flex; flex-direction:column; justify-content:space-between; gap:14px; }
+.launch-copy h2 { margin: 4px 0 8px; font-size: clamp(22px, 2.4vw, 34px); letter-spacing: -.04em; }
+.launch-copy p { margin: 0; color: var(--muted); max-width: 520px; }
+.launch-badges { display:flex; flex-wrap:wrap; gap:7px; }
+.launch-badges span { border:1px solid #31506a; color:#b8d8f0; background:rgba(76,167,255,.08); border-radius:999px; padding:5px 9px; font-size:10px; }
+.launch-steps { position:relative; z-index:1; display:grid; gap:8px; }
+.launch-step { display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:12px; min-height:82px; padding:12px; border:1px solid var(--line-soft); border-radius:12px; background:rgba(9,15,22,.66); transition:.16s ease; }
+.launch-step.active { border-color:#3a7caf; background:linear-gradient(90deg, rgba(76,167,255,.14), rgba(18,27,37,.82)); box-shadow: inset 3px 0 var(--blue); }
+.launch-step > span { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#0b141e; color:var(--blue); font-weight:800; font-size:11px; }
+.launch-step h3 { margin:0 0 3px; font-size:13px; }
+.launch-step p { margin:0; color:var(--muted); font-size:11px; }
+.launch-step code { display:inline-block; margin-top:7px; color:var(--green); background:#07110d; border:1px solid #1c4d38; border-radius:6px; padding:4px 7px; font:10px/1.1 Consolas, monospace; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(150px,1fr)); gap: 12px; margin-bottom: 18px; }
 .metric, .panel, .screen-card, .media-card, .timeline-step, .automation-card { position: relative; border: 1px solid var(--line); background: linear-gradient(145deg, rgba(22,31,42,.98), rgba(14,21,29,.98)); border-radius: 11px; box-shadow: 0 6px 20px rgba(0,0,0,.1); }
 .metric { padding: 16px; overflow: hidden; }
@@ -235,6 +251,7 @@ tr.clickable:hover td { background:rgba(76,167,255,.04); color:var(--text); }
 @media (max-width: 1180px) {
   :root { --inspector: 280px; --sidebar: 190px; }
   .metrics { grid-template-columns:repeat(2,1fr); }
+  .launchpad { grid-template-columns:1fr; }
   .command-trigger { display:none; }
 }
 @media (max-width: 900px) {
@@ -258,6 +275,8 @@ tr.clickable:hover td { background:rgba(76,167,255,.04); color:var(--text); }
 }
 @media (max-width: 560px) {
   .topbar { padding:0 9px; gap:8px; }
+  .launch-step { grid-template-columns:34px 1fr; }
+  .launch-step .button { grid-column:2; justify-self:start; }
   .connection-pill { display:none; }
   .topbar .publish { padding:7px 9px; }
   .metrics, .grid-three, .field-row { grid-template-columns:1fr; }

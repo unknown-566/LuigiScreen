@@ -199,7 +199,7 @@
   function renderDashboard() {
     const s = app.state.server;
     const onAir = app.state.screens.filter(screen => screen.enabled);
-    return `<div class="metrics">
+    return `${renderLaunchpad()}<div class="metrics">
       ${metric(tx("Screens online", "Plátna online"), `${s.activeScreens}/${s.totalScreens}`, tx("configured displays", "nastavených pláten"), "Enabled screens compared with every configured display.", "Počet zapnutých pláten oproti všem nastaveným.", s.activeScreens ? "good" : "warn")}
       ${metric(tx("Current viewers", "Aktuální diváci"), s.viewers, tx("receiving maps", "přijímá mapy"), "Unique screen receiver count sampled by the plugin.", "Počet příjemců pláten měřený pluginem.")}
       ${metric(tx("Active broadcasts", "Aktivní vysílání"), s.broadcasts, tx("live controllers", "živých řadičů"), "Screens with a running source, playlist or event controller.", "Plátna s běžícím zdrojem, playlistem nebo eventem.")}
@@ -209,6 +209,31 @@
       ${onAir.length ? `<div class="screen-grid">${onAir.map(screenCard).join("")}</div>` : empty("No active screens.", "Žádná aktivní plátna.")}
     </section><div><section class="panel">${panelHead(tx("Upcoming", "Nadcházející"), "The nearest enabled schedule entries and queued work.", "Nejbližší aktivní plány a připravený obsah.")}${renderUpcoming()}</section>
       <section class="panel">${panelHead(tx("Alerts", "Upozornění"), "Only issues that can affect playback or publishing are shown here.", "Zde se ukazují jen problémy ovlivňující přehrávání nebo publikování.")}${renderAlerts()}</section></div></div>`;
+  }
+
+  function renderLaunchpad() {
+    const screens = app.state.screens.length;
+    const media = app.state.media.filter(item => item.valid).length;
+    const playlists = app.state.playlists.length;
+    const web = app.state.web || {};
+    const nextStep = !screens ? "screen" : !media ? "media" : !playlists ? "playlist" : "live";
+    const hosts = (web.lanHosts || []).slice(0, 2).join(", ") || tx("auto detected", "automaticky zjištěno");
+    const step = (id, number, title, text, action, command = "") => `<article class="launch-step ${nextStep === id ? "active" : ""}">
+      <span>${number}</span><div><h3>${esc(title)}</h3><p>${esc(text)}</p>
+      ${command ? `<code>${esc(command)}</code>` : ""}</div><button class="button ${nextStep === id ? "primary" : "ghost"}" data-jump="${esc(action)}">${esc(tx("Open", "Otevřít"))}</button></article>`;
+    return `<section class="launchpad">
+      <div class="launch-copy"><span class="eyebrow">${esc(tx("START HERE", "ZAČNI TADY"))}</span>
+        <h2>${esc(tx("No config hunting. Build the screen from here.", "Žádný lov v configu. Plátno postavíš odsud."))}</h2>
+        <p>${esc(tx("Use one web link, drop media into the media folder, then control what players see.", "Použij jeden web odkaz, naházej média do složky a pak řídíš, co hráči vidí."))}</p>
+        <div class="launch-badges"><span>${esc(web.lanReady ? tx("LAN ready", "LAN připraveno") : tx("Local only", "Jen lokálně"))}</span><span>Port ${esc(web.port || 8765)}</span><span>${esc(hosts)}</span></div>
+      </div>
+      <div class="launch-steps">
+        ${step("screen", "01", tx("Place the canvas", "Postav plátno"), tx("Stand in Minecraft, look at a wall and create the map display.", "Stoupni si ve hře, koukni na zeď a vytvoř mapové plátno."), "screens", "/screen create main 7 4")}
+        ${step("media", "02", tx("Add media", "Přidej média"), tx("Put images, GIFs or videos into the LuigiScreen media folder.", "Dej obrázky, GIFy nebo videa do media složky LuigiScreen."), "media", app.state.config.mediaDirectory)}
+        ${step("playlist", "03", tx("Make rotation", "Udělej rotaci"), tx("Create a playlist so the screen can run without babysitting.", "Vytvoř playlist, aby plátno běželo samo bez hlídání."), "playlists")}
+        ${step("live", "04", tx("Go live", "Pusť to live"), tx("Preview a source, then take it live only when it looks right.", "Nejdřív nahledni zdroj a až pak ho pošli hráčům."), "live")}
+      </div>
+    </section>`;
   }
 
   function renderUpcoming() {
@@ -402,6 +427,7 @@
   function inspectEventStep(){const event=app.state.events.find(item=>item.id===app.selectedEvent),step=event?.steps.find(entry=>entry.id===app.selected.id);if(!step)return;$("#inspectorTitle").textContent=step.id;const base=`events.${event.id}.sequence.${step.id}`;$("#inspectorContent").innerHTML=`<section class="inspector-section"><h3>${tx("Event stage","Krok eventu")} ${info("A stage runs in timeline order unless branch or wait logic changes the flow.","Krok běží podle osy, pokud tok nezmění větev nebo čekání.")}</h3><div class="property"><span>Type</span><b>${esc(step.type)}</b></div><div class="property"><span>Value</span><b>${esc(step.value)}</b></div><div class="property"><span>Conditions</span><b>${esc(step.conditions)}</b></div>${draftField(`${base}.duration`,"duration",tx("Duration","Délka"),`${Math.round(step.duration/1000)}s`,"Maximum or fixed stage duration depending on its type.","Maximální nebo pevná délka podle typu kroku.")}${draftToggle(`${base}.enabled`,tx("Enabled","Zapnuto"),step.enabled,"Disabled stages are skipped safely.","Vypnuté kroky se bezpečně přeskočí.")}${draftField(`${base}.conditions.min-viewers`,"integer",tx("Minimum viewers","Minimum diváků"),0,"The stage waits or skips when too few viewers are nearby.","Krok čeká nebo se přeskočí, pokud je poblíž málo diváků.")}${draftField(`${base}.conditions.tps-above`,"double",tx("TPS above","TPS vyšší než"),18,"Protects the server from expensive stages during low TPS.","Chrání server před náročným krokem při nízkém TPS.")}</section>`;decorateHelp($("#inspectorContent"));bindActions($("#inspectorContent"));}
 
   function bindView(){
+    $$('[data-jump]').forEach(button=>button.onclick=()=>{app.view=button.dataset.jump;app.detailScreen=null;app.selected=null;render();});
     $$('[data-screen]').forEach(element=>element.onclick=()=>{app.selected={type:"screen",id:element.dataset.screen};app.detailScreen=element.dataset.screen;render();openInspector();});
     $$('[data-media]').forEach(element=>element.onclick=()=>{app.selected={type:"media",id:element.dataset.media};renderInspector();openInspector();$$('[data-media]').forEach(card=>card.classList.toggle("selected",card===element));});
     $$('[data-layout]').forEach(button=>button.onclick=()=>{app.screenLayout=button.dataset.layout;render();});

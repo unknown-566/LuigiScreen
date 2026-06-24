@@ -28,6 +28,10 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("new EventSource(\"/api/events\")"));
         assertTrue(javascript.contains("data-help"));
         assertTrue(javascript.contains("class=\"help-copy\""));
+        assertTrue(javascript.contains("function renderLaunchpad"));
+        assertTrue(javascript.contains("data-jump"));
+        assertTrue(css.contains(".launchpad"));
+        assertTrue(css.contains(".launch-step.active"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));
         assertTrue(css.contains(".app-shell.inspector-active"));
@@ -39,10 +43,10 @@ class StudioWebResourcesTest {
     }
 
     @Test
-    void defaultConfigKeepsStudioLocalAndSessionProtected() throws IOException {
+    void defaultConfigKeepsStudioLanReadyAndSessionProtected() throws IOException {
         String config = resource("/config.yml");
         assertTrue(config.contains("web-studio:"));
-        assertTrue(config.contains("bind: \"127.0.0.1\""));
+        assertTrue(config.contains("bind: \"0.0.0.0\""));
         assertTrue(config.contains("login-token-minutes: 5"));
         assertTrue(config.contains("session-hours: 8"));
         assertTrue(config.contains("preview-refresh-millis: 1000"));

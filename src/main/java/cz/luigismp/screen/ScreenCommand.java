@@ -498,15 +498,25 @@ final class ScreenCommand implements CommandExecutor, TabCompleter {
             message(sender, "commands.web-revoked", "count", web.revoke(sender));
             return;
         }
-        String link = web.createLoginLink(sender);
-        if (link == null) {
+        boolean lanEnabled = web.ensureLanAccess();
+        if (lanEnabled) {
+            message(sender, "commands.web-lan-enabled");
+        }
+        List<StudioWebAccess.Link> links = web.createLoginLinks(sender);
+        if (links.isEmpty()) {
             message(sender, "commands.web-unavailable");
             return;
         }
-        sender.sendMessage(plugin.messages().component("commands.web-link", "url", link)
-                .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(link))
-                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
-                        plugin.messages().component("commands.web-hover"))));
+        for (int index = 0; index < links.size(); index++) {
+            StudioWebAccess.Link link = links.get(index);
+            String key = index == 0 ? "commands.web-link" : "commands.web-link-extra";
+            sender.sendMessage(plugin.messages().component(key,
+                            "label", link.label(), "url", link.url())
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(link.url()))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            plugin.messages().component("commands.web-hover"))));
+        }
+        message(sender, "commands.web-firewall-tip");
     }
 
     private void vote(CommandSender sender, String[] args) {
