@@ -216,13 +216,87 @@ final class StudioService {
         }
         plugin.getConfig().set(path + ".history-window", 3);
         plugin.getConfig().set(path + ".default-duration", "30s");
-        plugin.getConfig().set(path + ".items.first.type", "text");
-        plugin.getConfig().set(path + ".items.first.text", "Edit this first item");
-        plugin.getConfig().set(path + ".items.first.weight", 1);
-        plugin.getConfig().set(path + ".items.first.duration", "10s");
         plugin.saveConfig();
         plugin.reloadPlaybackDefinitions();
         auditNamed(actor, "created playlist " + normalized);
+        return true;
+    }
+
+    synchronized boolean duplicatePlaylistNamed(String actor, String sourceId, String targetId) {
+        String source = ScreenDefinition.normalizeId(sourceId);
+        String target = ScreenDefinition.normalizeId(targetId);
+        String sourcePath = "playlists." + source;
+        String targetPath = "playlists." + target;
+        ConfigurationSection sourceSection = plugin.getConfig().getConfigurationSection(sourcePath);
+        if (sourceSection == null || !ScreenDefinition.isValidId(target)
+                || plugin.getConfig().isConfigurationSection(targetPath)) {
+            return false;
+        }
+        copySection(sourceSection, targetPath);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "duplicated playlist " + source + " to " + target);
+        return true;
+    }
+
+    synchronized boolean deletePlaylistNamed(String actor, String id) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        String path = "playlists." + normalized;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            return false;
+        }
+        plugin.getConfig().set(path, null);
+        for (String screenId : plugin.screenIds()) {
+            ScreenDefinition definition = plugin.screenDefinition(screenId);
+            if (definition != null && normalized.equals(definition.playlist())) {
+                plugin.applyPlaylistSetting(screenId, "");
+            }
+        }
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "deleted playlist " + normalized);
+        return true;
+    }
+
+    synchronized boolean addPlaylistMediaItemNamed(String actor, String playlistId,
+                                                   String requestedItemId,
+                                                   MediaEntry media,
+                                                   int weight,
+                                                   String duration) {
+        String playlist = ScreenDefinition.normalizeId(playlistId);
+        if (!plugin.getConfig().isConfigurationSection("playlists." + playlist)
+                || media == null || !media.valid()) {
+            return false;
+        }
+        String item = uniquePlaylistItemId(playlist, requestedItemId, media.id());
+        if (!ScreenDefinition.isValidId(item)) {
+            return false;
+        }
+        String path = "playlists." + playlist + ".items." + item;
+        ScreenSource source = media.source();
+        plugin.getConfig().set(path + ".type", source.type().id());
+        plugin.getConfig().set(path + ".value", source.value());
+        plugin.getConfig().set(path + ".weight", Math.max(1, weight));
+        plugin.getConfig().set(path + ".duration",
+                duration == null || duration.isBlank() ? "30s" : duration.trim());
+        plugin.getConfig().set(path + ".enabled", true);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "added " + media.id() + " to playlist " + playlist);
+        return true;
+    }
+
+    synchronized boolean deletePlaylistItemNamed(String actor, String playlistId, String itemId) {
+        String playlist = ScreenDefinition.normalizeId(playlistId);
+        String item = ScreenDefinition.normalizeId(itemId);
+        String path = "playlists." + playlist + ".items." + item;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            return false;
+        }
+        plugin.getConfig().set(path, null);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "deleted item " + item + " from playlist " + playlist);
         return true;
     }
 
@@ -917,6 +991,45 @@ final class StudioService {
         config.addDefault("templates.restart_warning.description",
                 "Timed warning, title and maintenance fallback.");
         config.options().copyDefaults(true);
+    }
+
+    private void copySection(ConfigurationSection source, String targetPath) {
+        plugin.getConfig().set(targetPath, null);
+        for (String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key)) {
+                plugin.getConfig().set(targetPath + "." + key, source.get(key));
+            }
+        }
+    }
+
+    private String uniquePlaylistItemId(String playlist, String requested, String fallback) {
+        String base = safeId(requested);
+        if (!ScreenDefinition.isValidId(base)) {
+            base = safeId(fallback);
+        }
+        if (!ScreenDefinition.isValidId(base)) {
+            base = "item";
+        }
+        for (int index = 1; index < 1000; index++) {
+            String suffix = index == 1 ? "" : "_" + index;
+            String prefix = base.length() + suffix.length() > 32
+                    ? base.substring(0, Math.max(1, 32 - suffix.length()))
+                    : base;
+            String candidate = prefix + suffix;
+            if (!plugin.getConfig().isConfigurationSection(
+                    "playlists." + playlist + ".items." + candidate)) {
+                return candidate;
+            }
+        }
+        return "";
+    }
+
+    private static String safeId(String value) {
+        String raw = value == null ? "" : value.toLowerCase(Locale.ROOT);
+        String safe = raw.replaceAll("[^a-z0-9_-]+", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_+|_+$", "");
+        return safe.length() > 32 ? safe.substring(0, 32) : safe;
     }
 
     private synchronized void save() {

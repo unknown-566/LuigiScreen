@@ -77,6 +77,8 @@ No client mod is required. Players join with a normal Minecraft client.
 
 - In-game Control Studio with role-based access
 - Secure browser Web Studio with one-time login links and revocable sessions
+- Beginner-first Web Studio workflow: Media Library -> Playlist Editor -> Screen Automation
+- Direct browser playlist builder with visible add, delete, duplicate and assign controls
 - Preview/Program Live Studio with bounded live source thumbnails
 - Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, Live Control Room, queues and playback explanations
@@ -100,6 +102,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Delta map updates to reduce unnecessary traffic
 - Optional guided MediaMTX configuration for RTMP
 - Editable Czech and English localization
+- English default configuration with optional Czech localization
 - Granular permissions for every management command
 - Optional `luigiscreen.see.<screen>` protection per display
 - Live performance boss bar and debug sidebar
@@ -246,9 +249,9 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 ## Current version
 
-**Version number:** `1.2.0-alpha.3`
+**Version number:** `1.2.0-alpha.5`
 
-**Version title:** `LuigiScreen 1.2.0-alpha.3 - Web Studio Refinement`
+**Version title:** `LuigiScreen 1.2.0-alpha.5 - Web Studio Playlist Builder`
 
 **Release channel:** Alpha
 
@@ -261,15 +264,15 @@ Bug reports should include the output of `/screen status`, relevant console logs
 **Primary file:**
 
 ```text
-LuigiScreen-1.2.0-alpha.3.jar
+LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,454,575 bytes
+**File size:** 55,470,001 bytes
 
 **SHA-256:**
 
 ```text
-3944F1BC31827C8F09502C37A65566AE7F1FC92D111515DE877B93EFE66DB21B
+8660253AAED72FBECE35A4976AA0AEE2DAEE409C187AE5BD0D8826C8CF0B5292
 ```
 
 **Dependency:**
@@ -279,24 +282,20 @@ LuigiScreen-1.2.0-alpha.3.jar
 ## Current version changelog
 
 ```markdown
-## LuigiScreen 1.2.0-alpha.3
+## LuigiScreen 1.2.0-alpha.5
 
 ### Web Studio
 
-- Added a local browser-based broadcast control room opened with `/screen web`
-- Added dashboard, screen grid, Media Library, playlist/event editors and inspector
-- Added Preview/Program Live Studio, Take Live, queues and playback controls
-- Added schedules, screen groups, monitoring, diagnostics and emergency control
-- Removed permanent info icons and moved help to clean hover targets and accessible descriptions
-- Refined navigation, cards, panels, tables and the responsive workspace
-- Hid the inspector until an object is selected, giving content more room
-- Added one-time login links, HttpOnly sessions, CSRF/origin protection and revocation
-- Added capability-based browser roles copied from the issuing Minecraft player
-- Added per-session drafts, typed validation, snapshots and safe Publish
-- Added external config-change protection to prevent accidental overwrites
-- Added compact SSE live updates and revision-based full-state refreshes
-- Added rate-limited, downscaled previews only while a browser is connected
-- 64 automated tests
+- Reworked Playlist Editor into a beginner-first builder
+- New Web Studio playlists start empty instead of creating a confusing starter item
+- Added visible Add item, Delete item, Duplicate, Delete playlist and Assign and play controls
+- Added Media Library Add to playlist buttons that use the selected target playlist
+- Added manual Play now controls from the screen Automation tab
+- Added playlist readiness, item count and assigned-screen count to the browser snapshot
+- Kept advanced playlist item edits in the inspector/draft flow
+- Fixed screen-detail tabs so Overview, Automation, Location, Performance and History switch correctly
+- Changed the default bundled config language to English (`language: en`)
+- Added bundled web-resource regression checks for the new controls
 
 ### Platform support
 
@@ -373,7 +372,7 @@ The future Plus edition is not part of this repository or Modrinth alpha release
 - [ ] Documentation URL added
 - [ ] Issue tracker URL added
 - [ ] MapEngine marked as a required dependency
-- [ ] `1.2.0-alpha.3` uploaded as Alpha
+- [ ] `1.2.0-alpha.5` uploaded as Alpha
 - [ ] Paper 1.21.11 selected for the version
 - [ ] Gallery screenshots checked for credentials and IP addresses
 - [ ] Server backup and alpha warning remain visible

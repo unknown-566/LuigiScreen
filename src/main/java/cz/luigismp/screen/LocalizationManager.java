@@ -37,7 +37,7 @@ final class LocalizationManager {
         saveBundledLanguage("en");
         saveBundledLanguage("cs");
 
-        String configured = plugin.getConfig().getString("language", "cs");
+        String configured = plugin.getConfig().getString("language", FALLBACK_LANGUAGE);
         language = normalizeLanguage(configured);
         File selected = languageFile(language);
         if (!selected.isFile()) {

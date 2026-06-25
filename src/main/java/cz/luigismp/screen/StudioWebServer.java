@@ -533,25 +533,42 @@ final class StudioWebServer {
                 if (!session.can("playlists")) yield ActionResult.denied();
                 boolean ok = plugin.studio().createPlaylistNamed(session.actor(),
                         ScreenDefinition.normalizeId(form.get("name")));
-                yield result(ok, "Playlist created.");
+                yield result(ok, "Playlist created. Add the first media item next.");
+            }
+            case "playlist.duplicate" -> {
+                if (!session.can("playlists")) yield ActionResult.denied();
+                boolean ok = plugin.studio().duplicatePlaylistNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("playlist")),
+                        ScreenDefinition.normalizeId(form.get("name")));
+                yield result(ok, "Playlist duplicated.");
+            }
+            case "playlist.delete" -> {
+                if (!session.can("playlists")) yield ActionResult.denied();
+                boolean ok = plugin.studio().deletePlaylistNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("playlist")));
+                yield result(ok, "Playlist deleted.");
             }
             case "playlist.item.add" -> {
                 if (!session.can("playlists")) yield ActionResult.denied();
                 String playlist = ScreenDefinition.normalizeId(form.get("playlist"));
-                String item = ScreenDefinition.normalizeId(form.get("item"));
                 MediaEntry media = plugin.studio().media(form.get("media"));
-                if (!plugin.playlistIds().contains(playlist)
-                        || !ScreenDefinition.isValidId(item) || media == null || !media.valid()) {
+                if (!plugin.playlistIds().contains(playlist) || media == null || !media.valid()) {
                     yield ActionResult.fail("Playlist, item name or media is invalid.");
                 }
-                String path = "playlists." + playlist + ".items." + item;
-                stageDraft(session, Map.of(
-                        path + ".type", media.type().id(),
-                        path + ".value", media.id(),
-                        path + ".weight", 1,
-                        path + ".duration", "30s",
-                        path + ".enabled", true));
-                yield ActionResult.ok("Playlist item staged. Publish the draft to add it.");
+                boolean ok = plugin.studio().addPlaylistMediaItemNamed(session.actor(),
+                        playlist,
+                        form.get("item"),
+                        media,
+                        (int) Math.max(1, parseLong(form.get("weight"), 1)),
+                        form.getOrDefault("duration", "30s"));
+                yield result(ok, "Media added to playlist.");
+            }
+            case "playlist.item.delete" -> {
+                if (!session.can("playlists")) yield ActionResult.denied();
+                boolean ok = plugin.studio().deletePlaylistItemNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("playlist")),
+                        ScreenDefinition.normalizeId(form.get("item")));
+                yield result(ok, "Playlist item deleted.");
             }
             case "conditions.test" -> {
                 if (!session.can("playlists")) yield ActionResult.denied();

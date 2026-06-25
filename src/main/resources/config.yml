@@ -1,4 +1,4 @@
-language: cs
+language: en
 
 web-studio:
   # LAN-ready by default. /screen web creates a one-time login link and still protects access.

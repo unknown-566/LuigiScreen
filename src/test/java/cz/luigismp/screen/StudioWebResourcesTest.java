@@ -35,11 +35,23 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("data-assign-playlist"));
         assertTrue(javascript.contains("data-clear-playlist"));
         assertTrue(javascript.contains("playlist.clear"));
+        assertTrue(javascript.contains("data-add-media-to-playlist"));
+        assertTrue(javascript.contains("data-delete-playlist"));
+        assertTrue(javascript.contains("data-duplicate-playlist"));
+        assertTrue(javascript.contains("data-delete-playlist-item"));
+        assertTrue(javascript.contains("data-assign-selected-playlist"));
+        assertTrue(javascript.contains("playlist.item.delete"));
+        assertTrue(javascript.contains("playlist.delete"));
+        assertTrue(javascript.contains("playlist.duplicate"));
         assertTrue(javascript.contains("data-start-event-detail"));
         assertTrue(css.contains(".launchpad"));
         assertTrue(css.contains(".launch-step.active"));
         assertTrue(css.contains(".screen-tabs"));
         assertTrue(css.contains(".nested-panel"));
+        assertTrue(css.contains(".builder-hero"));
+        assertTrue(css.contains(".playlist-workspace"));
+        assertTrue(css.contains(".playlist-item-card"));
+        assertTrue(css.contains(".card-actions"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));
         assertTrue(css.contains(".app-shell.inspector-active"));
@@ -53,6 +65,7 @@ class StudioWebResourcesTest {
     @Test
     void defaultConfigKeepsStudioLanReadyAndSessionProtected() throws IOException {
         String config = resource("/config.yml");
+        assertTrue(config.contains("language: en"));
         assertTrue(config.contains("web-studio:"));
         assertTrue(config.contains("bind: \"0.0.0.0\""));
         assertTrue(config.contains("login-token-minutes: 5"));

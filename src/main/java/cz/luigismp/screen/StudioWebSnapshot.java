@@ -223,10 +223,16 @@ final class StudioWebSnapshot {
         List<Map<String, Object>> result = new ArrayList<>();
         for (String id : plugin.playlistIds()) {
             List<PlaybackItemView> entries = plugin.playlistItems(id);
+            long assignedScreens = plugin.screenIds().stream()
+                    .map(plugin::screenDefinition)
+                    .filter(definition -> definition != null && id.equals(definition.playlist()))
+                    .count();
             result.add(Map.of(
                     "id", id,
                     "items", entries.stream().map(this::playbackItem).toList(),
-                    "valid", !entries.isEmpty()));
+                    "valid", !entries.isEmpty(),
+                    "status", entries.isEmpty() ? "empty" : "ready",
+                    "assignedScreens", assignedScreens));
         }
         return result;
     }

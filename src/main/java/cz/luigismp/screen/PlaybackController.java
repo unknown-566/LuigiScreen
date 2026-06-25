@@ -686,11 +686,9 @@ final class PlaybackController {
                 continue;
             }
             List<PlaybackItem> items = readItems(id, section, "items");
-            if (!items.isEmpty()) {
-                result.put(id, new PlaylistDefinition(id, items,
-                        Math.max(0, section.getInt("history-window", 1)),
-                        Math.max(0, section.getInt("category-history-window", 1))));
-            }
+            result.put(id, new PlaylistDefinition(id, items,
+                    Math.max(0, section.getInt("history-window", 1)),
+                    Math.max(0, section.getInt("category-history-window", 1))));
         }
         return result;
     }
