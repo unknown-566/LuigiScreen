@@ -42,7 +42,9 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("data-delete-playlist"));
         assertTrue(javascript.contains("data-duplicate-playlist"));
         assertTrue(javascript.contains("data-delete-playlist-item"));
+        assertTrue(javascript.contains("data-save-playlist-item"));
         assertTrue(javascript.contains("data-assign-selected-playlist"));
+        assertTrue(javascript.contains("playlist.item.update"));
         assertTrue(javascript.contains("playlist.item.delete"));
         assertTrue(javascript.contains("playlist.delete"));
         assertTrue(javascript.contains("playlist.duplicate"));
@@ -51,6 +53,8 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("data-delete-event"));
         assertTrue(javascript.contains("data-duplicate-event"));
         assertTrue(javascript.contains("data-delete-event-step"));
+        assertTrue(javascript.contains("data-save-event-step"));
+        assertTrue(javascript.contains("event.step.update"));
         assertTrue(javascript.contains("event.step.delete"));
         assertTrue(javascript.contains("event.delete"));
         assertTrue(javascript.contains("event.duplicate"));

@@ -330,6 +330,32 @@ final class StudioService {
         return true;
     }
 
+    synchronized boolean updatePlaylistItemNamed(String actor, String playlistId,
+                                                 String itemId,
+                                                 MediaEntry media,
+                                                 int weight,
+                                                 String duration,
+                                                 boolean enabled) {
+        String playlist = ScreenDefinition.normalizeId(playlistId);
+        String item = ScreenDefinition.normalizeId(itemId);
+        String path = "playlists." + playlist + ".items." + item;
+        if (!plugin.getConfig().isConfigurationSection(path)
+                || media == null || !media.valid()) {
+            return false;
+        }
+        ScreenSource source = media.source();
+        plugin.getConfig().set(path + ".type", source.type().id());
+        plugin.getConfig().set(path + ".value", source.value());
+        plugin.getConfig().set(path + ".weight", Math.max(1, weight));
+        plugin.getConfig().set(path + ".duration",
+                duration == null || duration.isBlank() ? "30s" : duration.trim());
+        plugin.getConfig().set(path + ".enabled", enabled);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "updated item " + item + " in playlist " + playlist);
+        return true;
+    }
+
     synchronized boolean deletePlaylistItemNamed(String actor, String playlistId, String itemId) {
         String playlist = ScreenDefinition.normalizeId(playlistId);
         String item = ScreenDefinition.normalizeId(itemId);
@@ -432,6 +458,46 @@ final class StudioService {
         plugin.saveConfig();
         plugin.reloadPlaybackDefinitions();
         auditNamed(actor, "added step " + step + " to event " + event);
+        return true;
+    }
+
+    synchronized boolean updateEventStepNamed(String actor, String eventId,
+                                              String stepId,
+                                              String requestedType,
+                                              MediaEntry media,
+                                              String text,
+                                              String duration,
+                                              boolean enabled) {
+        String event = ScreenDefinition.normalizeId(eventId);
+        String step = ScreenDefinition.normalizeId(stepId);
+        String path = "events." + event + ".sequence." + step;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            return false;
+        }
+        String type = normalizeEventStepType(requestedType);
+        if ("media".equals(type) && (media == null || !media.valid())) {
+            return false;
+        }
+        if ("media".equals(type)) {
+            ScreenSource source = media.source();
+            plugin.getConfig().set(path + ".type", source.type().id());
+            plugin.getConfig().set(path + ".value", source.value());
+            plugin.getConfig().set(path + ".text", null);
+            plugin.getConfig().set(path + ".title", null);
+            plugin.getConfig().set(path + ".message", null);
+        } else {
+            plugin.getConfig().set(path + ".type", type);
+            plugin.getConfig().set(path + ".text", eventStepText(type, text, step));
+            plugin.getConfig().set(path + ".value", null);
+            plugin.getConfig().set(path + ".url", null);
+            plugin.getConfig().set(path + ".folder", null);
+        }
+        plugin.getConfig().set(path + ".duration",
+                duration == null || duration.isBlank() ? "30s" : duration.trim());
+        plugin.getConfig().set(path + ".enabled", enabled);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "updated step " + step + " in event " + event);
         return true;
     }
 

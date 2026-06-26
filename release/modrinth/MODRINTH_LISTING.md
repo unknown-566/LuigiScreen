@@ -79,7 +79,9 @@ No client mod is required. Players join with a normal Minecraft client.
 - Secure browser Web Studio with one-time login links and revocable sessions
 - Beginner-first Web Studio workflow: Media Library -> Playlist Editor -> Screen Automation
 - Direct browser playlist builder with visible add, delete, duplicate and assign controls
+- Direct browser playlist item editor for media, duration, weight and enabled state
 - Direct browser event builder with visible add step, delete, duplicate, start and stop controls
+- Direct browser event step editor for type, value, text, duration and enabled state
 - Direct browser automation builder with readable WHEN / IF / THEN rules
 - Searchable bundled picker controls for long screen, media, event and playlist lists
 - Preview/Program Live Studio with bounded live source thumbnails
@@ -270,12 +272,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,503,289 bytes
+**File size:** 55,505,155 bytes
 
 **SHA-256:**
 
 ```text
-7E6B2ACAFF60051E12E2C1AA5FBC083C40B8856A839809312836F503A2535ADE
+A9583B6FA9B4DF11592BB5264809AD70A7060AB27AF8969185E5264580A15117
 ```
 
 **Dependency:**
@@ -292,9 +294,11 @@ LuigiScreen-1.2.0-alpha.5.jar
 - Reworked Playlist Editor into a beginner-first builder
 - New Web Studio playlists start empty instead of creating a confusing starter item
 - Added visible Add item, Delete item, Duplicate, Delete playlist and Assign and play controls
+- Added direct Save item controls for existing playlist item media, duration, weight and enabled state
 - Added Media Library Add to playlist buttons that use the selected target playlist
 - Reworked Events into a beginner-first timeline builder
 - Added direct event step add/delete actions from Web Studio
+- Added direct Save step controls for existing event step type, value, text, duration and enabled state
 - Added visible Delete event, Duplicate, Start event and Stop event controls
 - Kept empty events visible in the builder while preventing empty events from starting
 - Reworked Automations into a beginner-first rule builder

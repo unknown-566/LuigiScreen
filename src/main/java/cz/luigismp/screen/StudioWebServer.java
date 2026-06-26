@@ -564,6 +564,24 @@ final class StudioWebServer {
                         form.getOrDefault("duration", "30s"));
                 yield result(ok, "Media added to playlist.");
             }
+            case "playlist.item.update" -> {
+                if (!session.can("playlists")) yield ActionResult.denied();
+                String playlist = ScreenDefinition.normalizeId(form.get("playlist"));
+                String item = ScreenDefinition.normalizeId(form.get("item"));
+                MediaEntry media = plugin.studio().media(form.get("media"));
+                if (!plugin.playlistIds().contains(playlist) || media == null || !media.valid()
+                        || !ScreenDefinition.isValidId(item)) {
+                    yield ActionResult.fail("Playlist item, media or value is invalid.");
+                }
+                boolean ok = plugin.studio().updatePlaylistItemNamed(session.actor(),
+                        playlist,
+                        item,
+                        media,
+                        (int) Math.max(1, parseLong(form.get("weight"), 1)),
+                        form.getOrDefault("duration", "30s"),
+                        Boolean.parseBoolean(form.getOrDefault("enabled", "true")));
+                yield result(ok, "Playlist item saved.");
+            }
             case "playlist.item.delete" -> {
                 if (!session.can("playlists")) yield ActionResult.denied();
                 boolean ok = plugin.studio().deletePlaylistItemNamed(session.actor(),
@@ -616,6 +634,28 @@ final class StudioWebServer {
                         form.getOrDefault("text", ""),
                         form.getOrDefault("duration", "30s"));
                 yield result(ok, "Event step added.");
+            }
+            case "event.step.update" -> {
+                if (!session.can("events")) yield ActionResult.denied();
+                String event = ScreenDefinition.normalizeId(form.get("event"));
+                String step = ScreenDefinition.normalizeId(form.get("step"));
+                String stepType = form.getOrDefault("stepType", "media");
+                MediaEntry media = plugin.studio().media(form.get("media"));
+                if (!plugin.eventIds().contains(event)
+                        || !ScreenDefinition.isValidId(step)
+                        || (stepType.equalsIgnoreCase("media")
+                        && (media == null || !media.valid()))) {
+                    yield ActionResult.fail("Event step, media or value is invalid.");
+                }
+                boolean ok = plugin.studio().updateEventStepNamed(session.actor(),
+                        event,
+                        step,
+                        stepType,
+                        media,
+                        form.getOrDefault("text", ""),
+                        form.getOrDefault("duration", "30s"),
+                        Boolean.parseBoolean(form.getOrDefault("enabled", "true")));
+                yield result(ok, "Event step saved.");
             }
             case "event.step.delete" -> {
                 if (!session.can("events")) yield ActionResult.denied();
