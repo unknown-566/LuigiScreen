@@ -80,6 +80,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Beginner-first Web Studio workflow: Media Library -> Playlist Editor -> Screen Automation
 - Direct browser playlist builder with visible add, delete, duplicate and assign controls
 - Direct browser event builder with visible add step, delete, duplicate, start and stop controls
+- Direct browser automation builder with readable WHEN / IF / THEN rules
 - Preview/Program Live Studio with bounded live source thumbnails
 - Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, Live Control Room, queues and playback explanations
@@ -231,7 +232,7 @@ screen because their sizes, FPS and viewers may differ.
 - MediaMTX and OBS remain separate applications when RTMP is used
 - A publisher must stay online for live RTMP capture
 - URL images are loaded once after a successful request
-- Events are manual commands in this alpha; automatic triggers are planned later
+- Advanced automation conditions still use configuration rather than a visual condition builder
 
 ## Alpha notice
 
@@ -268,12 +269,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,472,686 bytes
+**File size:** 55,476,713 bytes
 
 **SHA-256:**
 
 ```text
-8819E0C63CF80C7949B45B26D9C4BB0853F66206CB4A59E029520D172C245E44
+E1293E81E2CE095C9E510A7E36074924D609F50F050F969F72FE3B53D8FFAD5A
 ```
 
 **Dependency:**
@@ -295,6 +296,10 @@ LuigiScreen-1.2.0-alpha.5.jar
 - Added direct event step add/delete actions from Web Studio
 - Added visible Delete event, Duplicate, Start event and Stop event controls
 - Kept empty events visible in the builder while preventing empty events from starting
+- Reworked Automations into a beginner-first rule builder
+- Added readable WHEN / IF / THEN automation cards
+- Added direct automation Save rule, Run now, Duplicate and Delete rule controls
+- Added direct event, playlist, start, stop and return automation actions from Web Studio
 - Added manual Play now controls from the screen Automation tab
 - Added playlist readiness, item count and assigned-screen count to the browser snapshot
 - Kept advanced playlist item edits in the inspector/draft flow

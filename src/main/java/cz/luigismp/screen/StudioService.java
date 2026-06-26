@@ -168,38 +168,82 @@ final class StudioService {
     synchronized boolean createScheduleNamed(String actor, String id, String time,
                                               String target, String action, String value) {
         String normalized = ScreenDefinition.normalizeId(id);
-        String normalizedTarget = ScreenDefinition.normalizeId(target);
-        String normalizedAction = action.toLowerCase(Locale.ROOT);
-        try {
-            LocalTime.parse(time);
-        } catch (RuntimeException exception) {
-            return false;
-        }
+        SchedulePayload payload = schedulePayload(
+                time, target, action, value, true, 50, "priority");
         if (!ScreenDefinition.isValidId(normalized)
                 || config.isConfigurationSection("schedules." + normalized)
-                || (!plugin.hasScreen(normalizedTarget)
-                && !groupIds().contains(normalizedTarget))
-                || !List.of("event", "playlist", "start", "stop", "return")
-                .contains(normalizedAction)
-                || (normalizedAction.equals("event")
-                && !plugin.eventIds().contains(ScreenDefinition.normalizeId(value)))
-                || (normalizedAction.equals("playlist")
-                && !plugin.playlistIds().contains(ScreenDefinition.normalizeId(value)))) {
+                || payload == null) {
             return false;
         }
         String path = "schedules." + normalized;
-        config.set(path + ".enabled", true);
         config.set(path + ".days", List.of("MONDAY", "TUESDAY", "WEDNESDAY",
                 "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"));
-        config.set(path + ".time", time);
-        config.set(path + ".target", normalizedTarget);
-        config.set(path + ".action", normalizedAction);
-        config.set(path + ".value", ScreenDefinition.normalizeId(value));
-        config.set(path + ".priority", 50);
-        config.set(path + ".conflict", "priority");
+        writeSchedule(path, payload);
         schedules = readSchedules();
         auditNamed(actor, "created schedule " + normalized);
         save();
+        return true;
+    }
+
+    synchronized boolean updateScheduleNamed(String actor, String id, String time,
+                                             String target, String action, String value,
+                                             boolean enabled, int priority,
+                                             String conflict) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        String path = "schedules." + normalized;
+        SchedulePayload payload = schedulePayload(
+                time, target, action, value, enabled, priority, conflict);
+        if (!config.isConfigurationSection(path) || payload == null) {
+            return false;
+        }
+        writeSchedule(path, payload);
+        schedules = readSchedules();
+        auditNamed(actor, "updated schedule " + normalized);
+        save();
+        return true;
+    }
+
+    synchronized boolean duplicateScheduleNamed(String actor, String sourceId, String targetId) {
+        String source = ScreenDefinition.normalizeId(sourceId);
+        String target = ScreenDefinition.normalizeId(targetId);
+        String sourcePath = "schedules." + source;
+        String targetPath = "schedules." + target;
+        ConfigurationSection sourceSection = config.getConfigurationSection(sourcePath);
+        if (sourceSection == null || !ScreenDefinition.isValidId(target)
+                || config.isConfigurationSection(targetPath)) {
+            return false;
+        }
+        copyStudioSection(sourceSection, targetPath);
+        schedules = readSchedules();
+        auditNamed(actor, "duplicated schedule " + source + " to " + target);
+        save();
+        return true;
+    }
+
+    synchronized boolean deleteScheduleNamed(String actor, String id) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        String path = "schedules." + normalized;
+        if (!config.isConfigurationSection(path)) {
+            return false;
+        }
+        config.set(path, null);
+        schedules = readSchedules();
+        auditNamed(actor, "deleted schedule " + normalized);
+        save();
+        return true;
+    }
+
+    synchronized boolean runScheduleNamed(String actor, String id) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        StudioSchedule schedule = schedules.stream()
+                .filter(value -> value.id().equals(normalized))
+                .findFirst()
+                .orElse(null);
+        if (schedule == null) {
+            return false;
+        }
+        runSchedule(schedule);
+        auditNamed(actor, "ran schedule " + normalized + " from Web Studio");
         return true;
     }
 
@@ -1083,6 +1127,53 @@ final class StudioService {
         }
     }
 
+    private void copyStudioSection(ConfigurationSection source, String targetPath) {
+        config.set(targetPath, null);
+        for (String key : source.getKeys(true)) {
+            if (!source.isConfigurationSection(key)) {
+                config.set(targetPath + "." + key, source.get(key));
+            }
+        }
+    }
+
+    private SchedulePayload schedulePayload(String time, String target, String action,
+                                            String value, boolean enabled,
+                                            int priority, String conflict) {
+        LocalTime parsedTime;
+        try {
+            parsedTime = LocalTime.parse(time == null || time.isBlank() ? "20:00" : time);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+        String normalizedTarget = ScreenDefinition.normalizeId(target);
+        String normalizedAction = action == null ? "event"
+                : action.trim().toLowerCase(Locale.ROOT);
+        String normalizedValue = ScreenDefinition.normalizeId(value);
+        if ((!plugin.hasScreen(normalizedTarget) && !groupIds().contains(normalizedTarget))
+                || !List.of("event", "playlist", "start", "stop", "return")
+                .contains(normalizedAction)
+                || (normalizedAction.equals("event") && !plugin.eventIds().contains(normalizedValue))
+                || (normalizedAction.equals("playlist") && !plugin.playlistIds().contains(normalizedValue))) {
+            return null;
+        }
+        if (!normalizedAction.equals("event") && !normalizedAction.equals("playlist")) {
+            normalizedValue = "";
+        }
+        String normalizedConflict = "allow".equalsIgnoreCase(conflict) ? "allow" : "priority";
+        return new SchedulePayload(enabled, parsedTime, normalizedTarget, normalizedAction,
+                normalizedValue, Math.max(0, priority), normalizedConflict);
+    }
+
+    private void writeSchedule(String path, SchedulePayload payload) {
+        config.set(path + ".enabled", payload.enabled());
+        config.set(path + ".time", payload.time().toString());
+        config.set(path + ".target", payload.target());
+        config.set(path + ".action", payload.action());
+        config.set(path + ".value", payload.value());
+        config.set(path + ".priority", payload.priority());
+        config.set(path + ".conflict", payload.conflict());
+    }
+
     private String uniquePlaylistItemId(String playlist, String requested, String fallback) {
         String base = safeId(requested);
         if (!ScreenDefinition.isValidId(base)) {
@@ -1176,6 +1267,11 @@ final class StudioService {
             return SourceType.VIDEO;
         }
         return null;
+    }
+
+    private record SchedulePayload(boolean enabled, LocalTime time, String target,
+                                   String action, String value, int priority,
+                                   String conflict) {
     }
 
     private static final class VoteSession {

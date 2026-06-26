@@ -570,6 +570,18 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
     radial-gradient(circle at 0 0, rgba(121,174,247,.16), transparent 38%),
     linear-gradient(135deg, #101723, #101416);
 }
+.builder-hero.automation-hero {
+  border-color: #5a4a28;
+  background:
+    radial-gradient(circle at 0 0, rgba(242,183,92,.14), transparent 38%),
+    linear-gradient(135deg, #1d1710, #111416);
+}
+.automation-create-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 120px minmax(150px, 1fr) 130px minmax(150px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
 .card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -605,6 +617,10 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
 .event-card:hover {
   border-color: #52739d;
   background: #111821;
+}
+.automation-rule-card:hover {
+  border-color: #8f7541;
+  background: #181510;
 }
 .playlist-card-top,
 .playlist-card-stats {
@@ -763,10 +779,24 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
 .event-add-panel {
   border-color: #2e3b4d;
 }
+.automation-rule-flow {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.automation-rule-canvas,
+.automation-edit-panel,
+.automation-groups-panel {
+  border-color: #423824;
+}
+.automation-rule-card.disabled {
+  opacity: .68;
+}
 
 @media (max-width: 1180px) {
   .automation-flow,
-  .playlist-workspace {
+  .playlist-workspace,
+  .automation-create-grid {
     grid-template-columns: 1fr;
   }
   .playlist-side {

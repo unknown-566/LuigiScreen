@@ -631,14 +631,46 @@ final class StudioWebServer {
                 yield result(ok, "Screen group created.");
             }
             case "schedule.create" -> {
-                if (!session.can("schedules")) yield ActionResult.denied();
+                if (!canSchedule(session)) yield ActionResult.denied();
                 boolean ok = plugin.studio().createScheduleNamed(session.actor(),
                         ScreenDefinition.normalizeId(form.get("name")),
                         form.getOrDefault("time", "20:00"),
                         form.getOrDefault("target", "main"),
                         form.getOrDefault("scheduleAction", "event"),
                         form.getOrDefault("value", ""));
-                yield result(ok, "Schedule created.");
+                yield result(ok, "Automation rule created.");
+            }
+            case "schedule.update" -> {
+                if (!canSchedule(session)) yield ActionResult.denied();
+                boolean ok = plugin.studio().updateScheduleNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("schedule")),
+                        form.getOrDefault("time", "20:00"),
+                        form.getOrDefault("target", "main"),
+                        form.getOrDefault("scheduleAction", "event"),
+                        form.getOrDefault("value", ""),
+                        Boolean.parseBoolean(form.getOrDefault("enabled", "true")),
+                        (int) Math.max(0, parseLong(form.get("priority"), 50)),
+                        form.getOrDefault("conflict", "priority"));
+                yield result(ok, "Automation rule saved.");
+            }
+            case "schedule.duplicate" -> {
+                if (!canSchedule(session)) yield ActionResult.denied();
+                boolean ok = plugin.studio().duplicateScheduleNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("schedule")),
+                        ScreenDefinition.normalizeId(form.get("name")));
+                yield result(ok, "Automation rule duplicated.");
+            }
+            case "schedule.delete" -> {
+                if (!canSchedule(session)) yield ActionResult.denied();
+                boolean ok = plugin.studio().deleteScheduleNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("schedule")));
+                yield result(ok, "Automation rule deleted.");
+            }
+            case "schedule.run" -> {
+                if (!canSchedule(session) && !session.can("control")) yield ActionResult.denied();
+                boolean ok = plugin.studio().runScheduleNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("schedule")));
+                yield result(ok, "Automation rule ran now.");
             }
             case "screen.start" -> control(session, () -> plugin.startScreen(screen), "Screen started.");
             case "screen.stop" -> control(session, () -> plugin.stopScreen(screen), "Screen stopped.");
@@ -725,6 +757,10 @@ final class StudioWebServer {
     private ActionResult control(StudioWebSecurity.Session session, Supplier<Boolean> operation,
                                  String message) {
         return session.can("control") ? result(operation.get(), message) : ActionResult.denied();
+    }
+
+    private boolean canSchedule(StudioWebSecurity.Session session) {
+        return session.can("schedules") || session.can("automations");
     }
 
     private ActionResult result(boolean success, String message) {

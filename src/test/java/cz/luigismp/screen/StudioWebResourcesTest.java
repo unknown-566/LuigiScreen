@@ -25,6 +25,7 @@ class StudioWebResourcesTest {
         }
         assertTrue(html.contains("id=\"inspector\""));
         assertTrue(html.contains("id=\"mobileControl\""));
+        assertTrue(html.contains("<span>Calendar</span>"));
         assertTrue(javascript.contains("new EventSource(\"/api/events\")"));
         assertTrue(javascript.contains("data-help"));
         assertTrue(javascript.contains("class=\"help-copy\""));
@@ -51,6 +52,17 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("event.step.delete"));
         assertTrue(javascript.contains("event.delete"));
         assertTrue(javascript.contains("event.duplicate"));
+        assertTrue(javascript.contains("data-open-automation"));
+        assertTrue(javascript.contains("data-save-automation"));
+        assertTrue(javascript.contains("data-run-automation"));
+        assertTrue(javascript.contains("data-delete-automation"));
+        assertTrue(javascript.contains("data-duplicate-automation"));
+        assertTrue(javascript.contains("schedule.update"));
+        assertTrue(javascript.contains("schedule.delete"));
+        assertTrue(javascript.contains("schedule.duplicate"));
+        assertTrue(javascript.contains("schedule.run"));
+        assertTrue(javascript.contains("schedule: renderAutomations"));
+        assertFalse(javascript.contains("New schedule"));
         assertTrue(css.contains(".launchpad"));
         assertTrue(css.contains(".launch-step.active"));
         assertTrue(css.contains(".screen-tabs"));
@@ -60,6 +72,9 @@ class StudioWebResourcesTest {
         assertTrue(css.contains(".playlist-item-card"));
         assertTrue(css.contains(".event-step-card"));
         assertTrue(css.contains(".event-hero"));
+        assertTrue(css.contains(".automation-hero"));
+        assertTrue(css.contains(".automation-rule-card"));
+        assertTrue(css.contains(".automation-rule-flow"));
         assertTrue(css.contains(".card-actions"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));

@@ -10,6 +10,7 @@
     detailScreen: null,
     selectedPlaylist: null,
     selectedEvent: null,
+    selectedAutomation: null,
     previewMedia: null,
     liveTarget: null,
     mediaPlaylistTarget: null,
@@ -57,7 +58,7 @@
     events: ["BUILD", "Events", "Build and inspect controlled broadcast timelines.", "Tvorba a kontrola řízených vysílacích časových os."],
     automations: ["BUILD", "Automations", "Readable triggers, conditions and resulting actions.", "Čitelné spouštěče, podmínky a výsledné akce."],
     live: ["OPERATE", "Live Studio", "Prepare privately, then take the source live.", "Připrav zdroj v náhledu a potom ho pošli živě."],
-    schedule: ["OPERATE", "Schedule", "Upcoming broadcasts and conflict detection.", "Nadcházející vysílání a kontrola konfliktů."],
+    schedule: ["OPERATE", "Automation Calendar", "Server-time automation rules and conflict detection.", "Časová pravidla automatizace a kontrola konfliktů."],
     monitoring: ["SYSTEM", "Monitoring", "Real-time load, frame flow and per-screen performance.", "Zátěž, tok snímků a výkon jednotlivých pláten."],
     diagnostics: ["SYSTEM", "Diagnostics", "Actionable checks and explanations, not raw errors.", "Srozumitelné kontroly a vysvětlení místo holých chyb."],
     configuration: ["SYSTEM", "Configuration", "Stage safe changes before publishing them.", "Připrav bezpečné změny před jejich publikováním."],
@@ -65,7 +66,7 @@
   };
   const czechTitles = { dashboard:"Přehled", screens:"Plátna", media:"Knihovna médií",
     playlists:"Editor playlistů", events:"Eventy", automations:"Automatizace",
-    live:"Živé studio", schedule:"Plán", monitoring:"Monitoring",
+    live:"Živé studio", schedule:"Kalendář automatizací", monitoring:"Monitoring",
     diagnostics:"Diagnostika", configuration:"Konfigurace", settings:"Nastavení" };
 
   async function request(path, data) {
@@ -161,7 +162,7 @@
     const labels = {
       dashboard: ["Dashboard", "Přehled"], screens: ["Screens", "Plátna"], media: ["Media", "Média"],
       playlists: ["Playlists", "Playlisty"], events: ["Events", "Eventy"], automations: ["Automations", "Automatizace"],
-      live: ["Live Studio", "Živé studio"], schedule: ["Schedule", "Plán"], monitoring: ["Monitoring", "Monitoring"],
+      live: ["Live Studio", "Živé studio"], schedule: ["Calendar", "Kalendář"], monitoring: ["Monitoring", "Monitoring"],
       diagnostics: ["Diagnostics", "Diagnostika"], configuration: ["Configuration", "Konfigurace"], settings: ["Settings", "Nastavení"]
     };
     $$('[data-view]').forEach(button => {
@@ -186,7 +187,7 @@
     content.innerHTML = ({
       dashboard: renderDashboard, screens: renderScreens, media: renderMedia,
       playlists: renderPlaylists, events: renderEvents, automations: renderAutomations,
-      live: renderLive, schedule: renderSchedule, monitoring: renderMonitoring,
+      live: renderLive, schedule: renderAutomations, monitoring: renderMonitoring,
       diagnostics: renderDiagnostics, configuration: renderConfiguration, settings: renderSettings
     })[app.view]();
     bindView();
@@ -427,8 +428,43 @@
 
   function renderAutomations() {
     const schedules = app.state.schedules;
-    const groupCreator = can("groups") ? `<section class="panel">${panelHead(tx("Screen groups", "Skupiny pláten"), "A group lets one live action target multiple physical displays.", "Skupina umožní jednou živou akcí cílit na více fyzických pláten.")}<div class="toolbar"><input id="newGroupName" placeholder="spawn_screens"><input id="newGroupScreens" placeholder="main,lobby"><button class="button primary" data-create-group>${tx("Create group", "Vytvořit skupinu")}</button></div><div class="quick-sources">${app.state.groups.map(group=>`<span class="tag">${esc(group.id)}: ${esc(group.screens.join(", "))}</span>`).join("")}</div></section>` : "";
-    return groupCreator + `<section class="panel">${panelHead(tx("Readable automation rules", "Čitelná pravidla automatizace"), "Automation is expressed as WHEN, IF and THEN instead of an opaque node graph.", "Automatizace je zapsaná jako KDY, POKUD a POTOM místo nepřehledného grafu.")}<div class="grid-three">${schedules.length ? schedules.map(schedule => `<article class="automation-card panel"><span class="tag ${schedule.enabled ? "live" : ""}">${schedule.enabled ? "ENABLED" : "DISABLED"}</span><h3>${esc(schedule.id)} ${info("This rule is generated from an enabled schedule and its conflict policy.", "Toto pravidlo vychází z aktivního plánu a jeho řešení konfliktů.")}</h3><div class="condition"><span><b>WHEN</b><br>${esc(schedule.nextLabel)}</span></div><div class="condition"><span><b>IF</b><br>${esc(schedule.days.join(", "))}</span></div><div class="condition"><span><b>THEN</b><br>${esc(schedule.action)} ${esc(schedule.value)} on ${esc(schedule.target)}</span></div><small class="muted">Cooldown/conflict: ${esc(schedule.conflict)} · priority ${schedule.priority}</small></article>`).join("") : empty("No automation rules yet.", "Zatím nejsou žádná pravidla automatizace.")}</div></section>`;
+    const canEdit = can("automations") || can("schedules");
+    const firstTarget = app.liveTarget || app.state.screens[0]?.id || "";
+    const creator = canEdit ? `<section class="panel builder-hero automation-hero">${panelHead(tx("Build an automation", "Vytvor automatizaci"), "A rule says WHEN something should happen and THEN what LuigiScreen should do.", "Pravidlo rika KDY se ma neco stat a POTOM co ma LuigiScreen udelat.")}<div class="automation-create-grid"><input id="newScheduleName" placeholder="${tx("evening_show", "vecerni_show")}"><input id="newScheduleTime" type="time" value="20:00"><select id="newScheduleTarget">${targetOptions(firstTarget)}</select><select id="newScheduleAction">${automationActionOptions("event")}</select><select id="newScheduleValue">${automationValueOptions("event", "")}</select><button class="button primary" data-create-schedule>${tx("Create rule", "Vytvorit pravidlo")}</button></div></section>` : "";
+    const groupCreator = can("groups") ? `<section class="panel automation-groups-panel">${panelHead(tx("Screen groups", "Skupiny platen"), "A group lets one automation target multiple physical displays.", "Skupina umozni jednim pravidlem cilit na vice fyzickych platen.")}<div class="toolbar"><input id="newGroupName" placeholder="spawn_screens"><input id="newGroupScreens" placeholder="main,lobby"><button class="button primary" data-create-group>${tx("Create group", "Vytvorit skupinu")}</button></div><div class="quick-sources">${app.state.groups.map(group=>`<span class="tag">${esc(group.id)}: ${esc(group.screens.join(", "))}</span>`).join("") || `<span class="muted">${tx("No groups yet", "Zatim zadne skupiny")}</span>`}</div></section>` : "";
+    if (!app.selectedAutomation) {
+      return creator + `<section class="panel">${panelHead(tx("Automation rules", "Automaticka pravidla"), "Readable WHEN / THEN cards. Open one to edit, duplicate, delete or run it immediately.", "Citelne WHEN / THEN karty. Otevri pravidlo pro upravu, duplikaci, smazani nebo okamzite spusteni.")}<div class="playlist-list automation-list">${schedules.length ? schedules.map(automationCard).join("") : `<div class="empty-builder">${empty("No automation rules yet. Create one above.", "Zatim nemas zadna automaticka pravidla. Vytvor jedno nahore.")}</div>`}</div></section>${groupCreator}`;
+    }
+    const schedule = schedules.find(item => item.id === app.selectedAutomation);
+    if (!schedule) { app.selectedAutomation = null; return renderAutomations(); }
+    const conflicts = schedule.conflicts || [];
+    return `<div class="toolbar"><button class="button ghost" data-back-automations>${tx("All automations", "Vsechny automatizace")}</button><span class="tag">${esc(schedule.id)}</span><span class="status ${schedule.enabled ? "running" : "empty"}">${schedule.enabled ? tx("enabled", "zapnuto") : tx("disabled", "vypnuto")}</span></div><div class="playlist-workspace automation-workspace"><div class="playlist-builder"><section class="panel automation-rule-canvas">${panelHead(schedule.id, "This is the rule in plain language.", "Toto je pravidlo normalni reci.", `<span class="tag">${esc(schedule.nextLabel)}</span>`)}${automationRuleVisual(schedule)}${conflicts.length ? `<div class="alert warning"><span class="alert-marker"></span><div><strong>${tx("Conflict detected", "Nalezen konflikt")}</strong><small>${esc(conflicts.join(", "))}</small></div></div>` : ""}</section></div><aside class="playlist-side"><section class="panel playlist-add-panel automation-edit-panel">${panelHead(tx("Edit rule", "Upravit pravidlo"), "Save writes this automation directly. No YAML editing needed.", "Save ulozi automatizaci primo. Bez YAML editace.")}<div class="field"><label>${tx("Enabled", "Zapnuto")}</label><select id="automationEnabled"><option value="true" ${schedule.enabled ? "selected" : ""}>${tx("Enabled", "Zapnuto")}</option><option value="false" ${!schedule.enabled ? "selected" : ""}>${tx("Disabled", "Vypnuto")}</option></select></div><div class="field"><label>WHEN</label><input id="automationTime" type="time" value="${esc(schedule.time)}"></div><div class="field"><label>${tx("Target", "Cil")}</label><select id="automationTarget">${targetOptions(schedule.target)}</select></div><div class="field"><label>THEN</label><select id="automationAction">${automationActionOptions(schedule.action)}</select></div><div class="field"><label>${tx("Value", "Hodnota")}</label><select id="automationValue">${automationValueOptions(schedule.action, schedule.value)}</select></div><div class="field-row"><div class="field"><label>${tx("Priority", "Priorita")}</label><input id="automationPriority" type="number" min="0" value="${schedule.priority}"></div><div class="field"><label>${tx("Conflict", "Konflikt")}</label><select id="automationConflict"><option value="priority" ${schedule.conflict === "priority" ? "selected" : ""}>priority</option><option value="allow" ${schedule.conflict === "allow" ? "selected" : ""}>allow</option></select></div></div><button class="button primary" data-save-automation="${esc(schedule.id)}">${tx("Save rule", "Ulozit pravidlo")}</button></section><section class="panel playlist-action-panel">${panelHead(tx("Operate", "Ovládat"), "Run now ignores the clock and executes this rule immediately.", "Run now ignoruje cas a spusti pravidlo hned.")}<div class="button-row"><button class="button success" data-run-automation="${esc(schedule.id)}">${tx("Run now", "Spustit hned")}</button><button class="button ghost" data-jump="schedule">${tx("Open calendar", "Otevrit kalendar")}</button></div></section><section class="panel playlist-action-panel">${panelHead(tx("Manage rule", "Sprava pravidla"), "Duplicate before experimenting, delete when the rule is no longer needed.", "Duplikuj pred experimentem, smaz kdyz pravidlo uz nepotrebujes.")}<div class="field"><label>${tx("Duplicate as", "Duplikovat jako")}</label><input id="duplicateAutomationName" placeholder="${esc(schedule.id)}_copy"></div><div class="button-row"><button class="button ghost" data-duplicate-automation="${esc(schedule.id)}">${tx("Duplicate", "Duplikovat")}</button><button class="button danger" data-delete-automation="${esc(schedule.id)}">${tx("Delete rule", "Smazat pravidlo")}</button></div></section></aside></div>${groupCreator}`;
+  }
+
+  function automationCard(schedule) {
+    const conflicts = schedule.conflicts || [];
+    return `<article class="playlist-card automation-rule-card panel ${schedule.enabled ? "" : "disabled"}" data-automation="${esc(schedule.id)}"><div class="playlist-card-top"><div><span class="tag">${tx("automation", "automatizace")}</span><h2>${esc(schedule.id)}</h2></div><span class="status ${schedule.enabled ? "running" : "empty"}">${schedule.enabled ? tx("enabled", "zapnuto") : tx("disabled", "vypnuto")}</span></div>${automationRuleVisual(schedule)}<div class="playlist-card-stats"><span>${schedule.priority}<small>${tx("priority", "priorita")}</small></span><span>${conflicts.length}<small>${tx("conflicts", "konflikty")}</small></span></div><div class="card-actions"><button class="button primary" data-open-automation="${esc(schedule.id)}">${tx("Open builder", "Otevrit builder")}</button><button class="button success" data-run-automation="${esc(schedule.id)}">${tx("Run now", "Spustit hned")}</button><button class="button ghost" data-delete-automation="${esc(schedule.id)}">${tx("Delete", "Smazat")}</button></div></article>`;
+  }
+
+  function automationRuleVisual(schedule) {
+    const thenValue = schedule.value ? ` ${schedule.value}` : "";
+    return `<div class="automation-rule-flow"><div class="condition"><span><b>WHEN</b><br>${esc(schedule.nextLabel || schedule.time)}</span></div><div class="condition"><span><b>IF</b><br>${esc((schedule.days || []).join(", "))}</span></div><div class="condition"><span><b>THEN</b><br>${esc(schedule.action + thenValue)} on ${esc(schedule.target)}</span></div></div><small class="muted">${tx("Conflict policy", "Reseni konfliktu")}: ${esc(schedule.conflict)} · ${tx("server time", "cas serveru")} ${esc(schedule.time)}</small>`;
+  }
+
+  function automationActionOptions(selected) {
+    return ["event", "playlist", "start", "stop", "return"].map(action => `<option value="${action}" ${action === selected ? "selected" : ""}>${action}</option>`).join("");
+  }
+
+  function automationValueOptions(action, selected = "") {
+    if (action === "event") {
+      const options = eventOptions(selected);
+      return options || `<option value="">${tx("No events", "Zadne eventy")}</option>`;
+    }
+    if (action === "playlist") {
+      const options = playlistOptions(selected);
+      return options || `<option value="">${tx("No playlists", "Zadne playlisty")}</option>`;
+    }
+    return `<option value="">${tx("No value needed", "Hodnota neni potreba")}</option>`;
   }
 
   function renderLive() {
@@ -444,8 +480,7 @@
   }
 
   function renderSchedule() {
-    const creator = can("schedules") ? `<section class="panel">${panelHead(tx("New schedule", "Nový plán"), "Creates a daily server-time rule. Advanced days and conflict policy remain editable in studio.yml.", "Vytvoří denní pravidlo podle času serveru. Dny a konflikty lze dále upravit ve studio.yml.")}<div class="toolbar"><input id="newScheduleName" placeholder="evening_show"><input id="newScheduleTime" type="time" value="20:00"><select id="newScheduleTarget">${targetOptions(app.liveTarget)}</select><select id="newScheduleAction"><option>event</option><option>playlist</option><option>start</option><option>stop</option><option>return</option></select><input id="newScheduleValue" placeholder="event_or_playlist"><button class="button primary" data-create-schedule>${tx("Create schedule", "Vytvořit plán")}</button></div></section>` : "";
-    return creator + `<section class="panel">${panelHead(tx("Upcoming schedule", "Nadcházející plán"), "Schedules execute at server local time. Conflicts are detected before publishing.", "Plány se spouštějí podle lokálního času serveru. Konflikty se kontrolují před publikováním.", `<div class="view-switch"><button class="active">Upcoming</button><button>Week</button><button>Month</button></div>`)}${app.state.schedules.length ? `<table><thead><tr><th>TIME</th><th>NAME</th><th>TARGET</th><th>ACTION</th><th>PRIORITY</th><th>CONFLICTS</th></tr></thead><tbody>${app.state.schedules.map(item=>`<tr><td>${esc(item.nextLabel)}</td><td><b>${esc(item.id)}</b></td><td>${esc(item.target)}</td><td><span class="tag ${item.action==="event"?"event":""}">${esc(item.action)}</span> ${esc(item.value)}</td><td>${item.priority}</td><td class="${item.conflicts.length?"warning-count":""}">${item.conflicts.length?esc(item.conflicts.join(", ")):"none"}</td></tr>`).join("")}</tbody></table>` : empty("No schedules configured.", "Nejsou nastavené žádné plány.")}</section>`;
+    return renderAutomations();
   }
 
   function renderMonitoring() {
@@ -525,7 +560,7 @@
   function inspectEventStep(){const event=app.state.events.find(item=>item.id===app.selectedEvent),step=event?.steps.find(entry=>entry.id===app.selected.id);if(!step)return;$("#inspectorTitle").textContent=step.id;const base=`events.${event.id}.sequence.${step.id}`;$("#inspectorContent").innerHTML=`<section class="inspector-section"><h3>${tx("Event stage","Krok eventu")} ${info("A stage runs in timeline order unless branch or wait logic changes the flow.","Krok běží podle osy, pokud tok nezmění větev nebo čekání.")}</h3><div class="property"><span>Type</span><b>${esc(step.type)}</b></div><div class="property"><span>Value</span><b>${esc(step.value)}</b></div><div class="property"><span>Conditions</span><b>${esc(step.conditions)}</b></div>${draftField(`${base}.duration`,"duration",tx("Duration","Délka"),`${Math.round(step.duration/1000)}s`,"Maximum or fixed stage duration depending on its type.","Maximální nebo pevná délka podle typu kroku.")}${draftToggle(`${base}.enabled`,tx("Enabled","Zapnuto"),step.enabled,"Disabled stages are skipped safely.","Vypnuté kroky se bezpečně přeskočí.")}${draftField(`${base}.conditions.min-viewers`,"integer",tx("Minimum viewers","Minimum diváků"),0,"The stage waits or skips when too few viewers are nearby.","Krok čeká nebo se přeskočí, pokud je poblíž málo diváků.")}${draftField(`${base}.conditions.tps-above`,"double",tx("TPS above","TPS vyšší než"),18,"Protects the server from expensive stages during low TPS.","Chrání server před náročným krokem při nízkém TPS.")}</section>`;decorateHelp($("#inspectorContent"));bindActions($("#inspectorContent"));}
 
   function bindView(){
-    $$('[data-jump]').forEach(button=>button.onclick=()=>{app.view=button.dataset.jump;app.detailScreen=null;app.selected=null;render();});
+    $$('[data-jump]').forEach(button=>button.onclick=()=>{app.view=button.dataset.jump;app.detailScreen=null;app.selected=null;app.selectedAutomation=null;render();});
     $$('[data-screen-tab]').forEach(button=>button.onclick=()=>{app.screenDetailTab=button.dataset.screenTab;render(false);});
     $$('[data-screen]').forEach(element=>element.onclick=()=>{app.selected={type:"screen",id:element.dataset.screen};app.detailScreen=element.dataset.screen;render();openInspector();});
     $$('[data-media]').forEach(element=>element.onclick=()=>{app.selected={type:"media",id:element.dataset.media};renderInspector();openInspector();$$('[data-media]').forEach(card=>card.classList.toggle("selected",card===element));});
@@ -539,6 +574,9 @@
     $$('[data-open-event]').forEach(button=>button.onclick=event=>{event.stopPropagation();app.selectedEvent=button.dataset.openEvent;app.selected=null;render();});
     $('[data-back-events]')?.addEventListener("click",()=>{app.selectedEvent=null;app.selected=null;render();});
     $$('[data-event-step]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selected={type:"event-step",id:element.dataset.eventStep};render();renderInspector();openInspector();});
+    $$('[data-automation]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selectedAutomation=element.dataset.automation;app.selected=null;render();});
+    $$('[data-open-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();app.selectedAutomation=button.dataset.openAutomation;app.selected=null;render();});
+    $('[data-back-automations]')?.addEventListener("click",()=>{app.selectedAutomation=null;app.selected=null;render();});
     $$('[data-start-event]').forEach(button=>button.onclick=event=>action("event.play",{screen:$("#eventTarget")?.value || app.liveTarget || "",event:event.currentTarget.dataset.startEvent},true));
     $$('[data-stop-event]').forEach(button=>button.onclick=event=>action("event.stop",{screen:$("#eventTarget")?.value || app.liveTarget || "",event:event.currentTarget.dataset.stopEvent},true));
     $('[data-simulate]')?.addEventListener("click",()=>toast(tx("Probabilities shown are normalized from 1,000 analysis selections.","Zobrazené pravděpodobnosti jsou normalizované z 1 000 analytických výběrů.")));
@@ -548,6 +586,8 @@
     $("#previewSource")?.addEventListener("change",event=>{app.previewMedia=event.target.value;render();});
     $("#liveTarget")?.addEventListener("change",event=>{app.liveTarget=event.target.value;render();});
     $("#eventTarget")?.addEventListener("change",event=>{app.liveTarget=event.target.value;render(false);});
+    $("#newScheduleAction")?.addEventListener("change",event=>{$("#newScheduleValue").innerHTML=automationValueOptions(event.target.value, "");});
+    $("#automationAction")?.addEventListener("change",event=>{$("#automationValue").innerHTML=automationValueOptions(event.target.value, "");});
     $("#mediaPlaylistTarget")?.addEventListener("change",event=>{app.mediaPlaylistTarget=event.target.value;render(false);});
     $("#playlistAssignTarget")?.addEventListener("change",event=>{app.playlistAssignTarget=event.target.value;render(false);});
     $("#mediaSearch")?.addEventListener("input",event=>{app.mediaSearch=event.target.value;window.clearTimeout(app.searchTimer);app.searchTimer=setTimeout(()=>render(false),150);});
@@ -585,6 +625,10 @@
     root.querySelectorAll('[data-delete-event]').forEach(button=>button.onclick=event=>{event.stopPropagation();action("event.delete",{event:button.dataset.deleteEvent},true);});
     root.querySelectorAll('[data-duplicate-event]').forEach(button=>button.onclick=event=>{event.stopPropagation();const name=$("#duplicateEventName")?.value?.trim() || "";if(!name){toast(tx("Enter a new event name first.","Nejdriv zadej novy nazev eventu."),true);return;}action("event.duplicate",{event:button.dataset.duplicateEvent,name});});
     root.querySelectorAll('[data-delete-event-step]').forEach(button=>button.onclick=event=>{event.stopPropagation();action("event.step.delete",{event:button.dataset.eventId,step:button.dataset.deleteEventStep},true);});
+    root.querySelectorAll('[data-save-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();action("schedule.update",{schedule:button.dataset.saveAutomation,time:$("#automationTime")?.value || "20:00",target:$("#automationTarget")?.value || "",scheduleAction:$("#automationAction")?.value || "event",value:$("#automationValue")?.value || "",enabled:$("#automationEnabled")?.value || "true",priority:$("#automationPriority")?.value || "50",conflict:$("#automationConflict")?.value || "priority"});});
+    root.querySelectorAll('[data-run-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();action("schedule.run",{schedule:button.dataset.runAutomation},true);});
+    root.querySelectorAll('[data-delete-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();action("schedule.delete",{schedule:button.dataset.deleteAutomation},true);});
+    root.querySelectorAll('[data-duplicate-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();const name=$("#duplicateAutomationName")?.value?.trim() || "";if(!name){toast(tx("Enter a new rule name first.","Nejdriv zadej novy nazev pravidla."),true);return;}action("schedule.duplicate",{schedule:button.dataset.duplicateAutomation,name});});
     root.querySelectorAll('[data-test-conditions]').forEach(button=>button.onclick=()=>action("conditions.test",{screen:$("#conditionTestScreen").value,playlist:app.selectedPlaylist,item:app.selected?.id}));
   }
 
