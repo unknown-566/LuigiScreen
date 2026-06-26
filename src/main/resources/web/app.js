@@ -610,15 +610,15 @@
     $$('[data-media]').forEach(element=>element.onclick=()=>{app.selected={type:"media",id:element.dataset.media};renderInspector();openInspector();$$('[data-media]').forEach(card=>card.classList.toggle("selected",card===element));});
     $$('[data-layout]').forEach(button=>button.onclick=()=>{app.screenLayout=button.dataset.layout;render();});
     $('[data-back-screens]')?.addEventListener("click",()=>{app.detailScreen=null;render();});
-    $$('[data-playlist]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selectedPlaylist=element.dataset.playlist;app.selected=null;render();});
+    $$('[data-playlist]').forEach(element=>element.onclick=event=>{if(isInteractiveTarget(event.target))return;app.selectedPlaylist=element.dataset.playlist;app.selected=null;render();});
     $$('[data-open-playlist]').forEach(button=>button.onclick=event=>{event.stopPropagation();app.selectedPlaylist=button.dataset.openPlaylist;app.selected=null;render();});
     $('[data-back-playlists]')?.addEventListener("click",()=>{app.selectedPlaylist=null;app.selected=null;render();});
-    $$('[data-playlist-item]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selected={type:"playlist-item",id:element.dataset.playlistItem};render();renderInspector();openInspector();});
-    $$('[data-event]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selectedEvent=element.dataset.event;app.selected=null;render();});
+    $$('[data-playlist-item]').forEach(element=>element.onclick=event=>{if(isInteractiveTarget(event.target))return;app.selected={type:"playlist-item",id:element.dataset.playlistItem};render();renderInspector();openInspector();});
+    $$('[data-event]').forEach(element=>element.onclick=event=>{if(isInteractiveTarget(event.target))return;app.selectedEvent=element.dataset.event;app.selected=null;render();});
     $$('[data-open-event]').forEach(button=>button.onclick=event=>{event.stopPropagation();app.selectedEvent=button.dataset.openEvent;app.selected=null;render();});
     $('[data-back-events]')?.addEventListener("click",()=>{app.selectedEvent=null;app.selected=null;render();});
-    $$('[data-event-step]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selected={type:"event-step",id:element.dataset.eventStep};render();renderInspector();openInspector();});
-    $$('[data-automation]').forEach(element=>element.onclick=event=>{if(event.target.closest("button,input,select,a"))return;app.selectedAutomation=element.dataset.automation;app.selected=null;render();});
+    $$('[data-event-step]').forEach(element=>element.onclick=event=>{if(isInteractiveTarget(event.target))return;app.selected={type:"event-step",id:element.dataset.eventStep};render();renderInspector();openInspector();});
+    $$('[data-automation]').forEach(element=>element.onclick=event=>{if(isInteractiveTarget(event.target))return;app.selectedAutomation=element.dataset.automation;app.selected=null;render();});
     $$('[data-open-automation]').forEach(button=>button.onclick=event=>{event.stopPropagation();app.selectedAutomation=button.dataset.openAutomation;app.selected=null;render();});
     $('[data-back-automations]')?.addEventListener("click",()=>{app.selectedAutomation=null;app.selected=null;render();});
     $$('[data-start-event]').forEach(button=>button.onclick=event=>action("event.play",{screen:$("#eventTarget")?.value || app.liveTarget || "",event:event.currentTarget.dataset.startEvent},true));
@@ -710,6 +710,12 @@
   function mediaOptions(selected=""){const options=app.state.media.filter(item=>item.valid).map(item=>`<option value="${esc(item.id)}" ${item.id===selected?"selected":""}>${esc(item.id)}</option>`).join("");return options||`<option value="">${tx("No valid media", "Zadna platna media")}</option>`;}
   function selectedLiveTarget(){return $("#mediaTarget")?.value || app.liveTarget || app.state.screens[0]?.id || "";}
   function targetScreen(id){const direct=screenById(id);if(direct)return direct;const group=app.state?.groups?.find(item=>item.id===id);return group?.screens?.map(screenById).find(Boolean);}
+  function isInteractiveTarget(target){
+    return Boolean(target?.closest?.("button,input,select,textarea,a,.choices,.choices__list,[role='listbox']"));
+  }
+  function holdPickerRender(){
+    app.deferRenderUntil = Date.now() + 30000;
+  }
   function enhancePickers(root=document){
     if(!window.Choices)return;
     root.querySelectorAll("select:not([data-native])").forEach(select=>{
@@ -723,6 +729,15 @@
         searchPlaceholderValue:tx("Search...", "Hledat..."),
         shouldSort:false
       });
+      select.addEventListener("showDropdown", holdPickerRender);
+      select.addEventListener("search", holdPickerRender);
+      select.addEventListener("highlightChoice", holdPickerRender);
+      select.addEventListener("choice", holdPickerRender);
+      select.addEventListener("hideDropdown", () => app.deferRenderUntil = Math.max(app.deferRenderUntil, Date.now() + 1200));
+      const picker = select.closest(".choices");
+      if(picker){
+        ["pointerdown","pointermove","mouseenter","mouseover","focusin"].forEach(type=>picker.addEventListener(type, holdPickerRender, true));
+      }
     });
   }
   function rebuildPicker(select){

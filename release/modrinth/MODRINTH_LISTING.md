@@ -270,12 +270,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,503,050 bytes
+**File size:** 55,503,289 bytes
 
 **SHA-256:**
 
 ```text
-B8F3D9FAF48324D1BD835AC62C3F07D1353DF81D1DED1ADD5F3AB35E5F621CA6
+7E6B2ACAFF60051E12E2C1AA5FBC083C40B8856A839809312836F503A2535ADE
 ```
 
 **Dependency:**
@@ -304,6 +304,8 @@ B8F3D9FAF48324D1BD835AC62C3F07D1353DF81D1DED1ADD5F3AB35E5F621CA6
 - Added local browser-side automation drafts so live refreshes no longer reset unsaved rule edits
 - Prevented the automation time picker from being interrupted by live Web Studio refreshes while editing
 - Replaced plain Web Studio select boxes with bundled searchable Choices.js picker controls
+- Fixed searchable picker dropdowns closing while moving over their options
+- Prevented picker clicks from being mistaken for playlist, event or automation card clicks
 - Bundled Choices.js locally, including its MIT license notice, so Web Studio does not need a CDN
 - Routed the old Schedule page to the new Automation builder to avoid two competing editors
 - Added manual Play now controls from the screen Automation tab

@@ -66,6 +66,10 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("schedule: renderAutomations"));
         assertTrue(javascript.contains("function enhancePickers"));
         assertTrue(javascript.contains("new Choices"));
+        assertTrue(javascript.contains("function holdPickerRender"));
+        assertTrue(javascript.contains("function isInteractiveTarget"));
+        assertTrue(javascript.contains("showDropdown"));
+        assertTrue(javascript.contains("highlightChoice"));
         assertTrue(javascript.contains("automationDrafts"));
         assertTrue(javascript.contains("deferRenderUntil"));
         assertFalse(javascript.contains("New schedule"));
