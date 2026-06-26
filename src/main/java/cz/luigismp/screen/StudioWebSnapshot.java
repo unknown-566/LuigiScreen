@@ -244,6 +244,7 @@ final class StudioWebSnapshot {
             result.add(Map.of(
                     "id", id,
                     "steps", entries.stream().map(this::playbackItem).toList(),
+                    "status", entries.isEmpty() ? "empty" : "ready",
                     "valid", !entries.isEmpty()));
         }
         return result;

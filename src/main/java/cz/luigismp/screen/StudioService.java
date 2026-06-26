@@ -324,6 +324,87 @@ final class StudioService {
         return true;
     }
 
+    synchronized boolean duplicateEventNamed(String actor, String sourceId, String targetId) {
+        String source = ScreenDefinition.normalizeId(sourceId);
+        String target = ScreenDefinition.normalizeId(targetId);
+        String sourcePath = "events." + source;
+        String targetPath = "events." + target;
+        ConfigurationSection sourceSection = plugin.getConfig().getConfigurationSection(sourcePath);
+        if (sourceSection == null || !ScreenDefinition.isValidId(target)
+                || plugin.getConfig().isConfigurationSection(targetPath)) {
+            return false;
+        }
+        copySection(sourceSection, targetPath);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "duplicated event " + source + " to " + target);
+        return true;
+    }
+
+    synchronized boolean deleteEventNamed(String actor, String id) {
+        String normalized = ScreenDefinition.normalizeId(id);
+        String path = "events." + normalized;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            return false;
+        }
+        plugin.getConfig().set(path, null);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "deleted event " + normalized);
+        return true;
+    }
+
+    synchronized boolean addEventStepNamed(String actor, String eventId,
+                                           String requestedStepId,
+                                           String requestedType,
+                                           MediaEntry media,
+                                           String text,
+                                           String duration) {
+        String event = ScreenDefinition.normalizeId(eventId);
+        if (!plugin.getConfig().isConfigurationSection("events." + event)) {
+            return false;
+        }
+        String type = normalizeEventStepType(requestedType);
+        if ("media".equals(type) && (media == null || !media.valid())) {
+            return false;
+        }
+        String fallback = "media".equals(type) ? media.id() : type;
+        String step = uniqueEventStepId(event, requestedStepId, fallback);
+        if (!ScreenDefinition.isValidId(step)) {
+            return false;
+        }
+        String path = "events." + event + ".sequence." + step;
+        if ("media".equals(type)) {
+            ScreenSource source = media.source();
+            plugin.getConfig().set(path + ".type", source.type().id());
+            plugin.getConfig().set(path + ".value", source.value());
+        } else {
+            plugin.getConfig().set(path + ".type", type);
+            plugin.getConfig().set(path + ".text", eventStepText(type, text, step));
+        }
+        plugin.getConfig().set(path + ".duration",
+                duration == null || duration.isBlank() ? "30s" : duration.trim());
+        plugin.getConfig().set(path + ".enabled", true);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "added step " + step + " to event " + event);
+        return true;
+    }
+
+    synchronized boolean deleteEventStepNamed(String actor, String eventId, String stepId) {
+        String event = ScreenDefinition.normalizeId(eventId);
+        String step = ScreenDefinition.normalizeId(stepId);
+        String path = "events." + event + ".sequence." + step;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            return false;
+        }
+        plugin.getConfig().set(path, null);
+        plugin.saveConfig();
+        plugin.reloadPlaybackDefinitions();
+        auditNamed(actor, "deleted step " + step + " from event " + event);
+        return true;
+    }
+
     List<String> templateIds() {
         ConfigurationSection root = config.getConfigurationSection("templates");
         return root == null ? List.of() : root.getKeys(false).stream().sorted().toList();
@@ -1022,6 +1103,48 @@ final class StudioService {
             }
         }
         return "";
+    }
+
+    private String uniqueEventStepId(String event, String requested, String fallback) {
+        String base = safeId(requested);
+        if (!ScreenDefinition.isValidId(base)) {
+            base = safeId(fallback);
+        }
+        if (!ScreenDefinition.isValidId(base)) {
+            base = "step";
+        }
+        for (int index = 1; index < 1000; index++) {
+            String suffix = index == 1 ? "" : "_" + index;
+            String prefix = base.length() + suffix.length() > 32
+                    ? base.substring(0, Math.max(1, 32 - suffix.length()))
+                    : base;
+            String candidate = prefix + suffix;
+            if (!plugin.getConfig().isConfigurationSection(
+                    "events." + event + ".sequence." + candidate)) {
+                return candidate;
+            }
+        }
+        return "";
+    }
+
+    private static String normalizeEventStepType(String value) {
+        String normalized = value == null ? "media"
+                : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        return switch (normalized) {
+            case "text", "countdown", "wait", "manual", "wait-manual" -> normalized;
+            default -> "media";
+        };
+    }
+
+    private static String eventStepText(String type, String text, String step) {
+        if (text != null && !text.isBlank()) {
+            return text.trim();
+        }
+        return switch (type) {
+            case "countdown" -> "Starting soon";
+            case "wait", "manual", "wait-manual" -> "Waiting for operator";
+            default -> step;
+        };
     }
 
     private static String safeId(String value) {

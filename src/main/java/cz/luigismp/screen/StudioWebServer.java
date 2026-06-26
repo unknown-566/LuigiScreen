@@ -581,7 +581,20 @@ final class StudioWebServer {
                 if (!session.can("events")) yield ActionResult.denied();
                 boolean ok = plugin.studio().createEventNamed(session.actor(),
                         ScreenDefinition.normalizeId(form.get("name")));
-                yield result(ok, "Event created.");
+                yield result(ok, "Event created. Add or remove steps in the builder.");
+            }
+            case "event.duplicate" -> {
+                if (!session.can("events")) yield ActionResult.denied();
+                boolean ok = plugin.studio().duplicateEventNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("event")),
+                        ScreenDefinition.normalizeId(form.get("name")));
+                yield result(ok, "Event duplicated.");
+            }
+            case "event.delete" -> {
+                if (!session.can("events")) yield ActionResult.denied();
+                boolean ok = plugin.studio().deleteEventNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("event")));
+                yield result(ok, "Event deleted.");
             }
             case "event.step.add" -> {
                 if (!session.can("events")) yield ActionResult.denied();
@@ -589,16 +602,26 @@ final class StudioWebServer {
                 String step = ScreenDefinition.normalizeId(form.get("step"));
                 MediaEntry media = plugin.studio().media(form.get("media"));
                 if (!plugin.eventIds().contains(event)
-                        || !ScreenDefinition.isValidId(step) || media == null || !media.valid()) {
+                        || (form.getOrDefault("stepType", "media").equalsIgnoreCase("media")
+                        && (media == null || !media.valid()))
+                        || (!step.isBlank() && !ScreenDefinition.isValidId(step))) {
                     yield ActionResult.fail("Event, step name or media is invalid.");
                 }
-                String path = "events." + event + ".sequence." + step;
-                stageDraft(session, Map.of(
-                        path + ".type", media.type().id(),
-                        path + ".value", media.id(),
-                        path + ".duration", "30s",
-                        path + ".enabled", true));
-                yield ActionResult.ok("Event step staged. Publish the draft to add it.");
+                boolean ok = plugin.studio().addEventStepNamed(session.actor(),
+                        event,
+                        step,
+                        form.getOrDefault("stepType", "media"),
+                        media,
+                        form.getOrDefault("text", ""),
+                        form.getOrDefault("duration", "30s"));
+                yield result(ok, "Event step added.");
+            }
+            case "event.step.delete" -> {
+                if (!session.can("events")) yield ActionResult.denied();
+                boolean ok = plugin.studio().deleteEventStepNamed(session.actor(),
+                        ScreenDefinition.normalizeId(form.get("event")),
+                        ScreenDefinition.normalizeId(form.get("step")));
+                yield result(ok, "Event step deleted.");
             }
             case "group.create" -> {
                 if (!session.can("groups")) yield ActionResult.denied();

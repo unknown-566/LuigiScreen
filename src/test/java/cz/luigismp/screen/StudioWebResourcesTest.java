@@ -44,6 +44,13 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("playlist.delete"));
         assertTrue(javascript.contains("playlist.duplicate"));
         assertTrue(javascript.contains("data-start-event-detail"));
+        assertTrue(javascript.contains("data-open-event"));
+        assertTrue(javascript.contains("data-delete-event"));
+        assertTrue(javascript.contains("data-duplicate-event"));
+        assertTrue(javascript.contains("data-delete-event-step"));
+        assertTrue(javascript.contains("event.step.delete"));
+        assertTrue(javascript.contains("event.delete"));
+        assertTrue(javascript.contains("event.duplicate"));
         assertTrue(css.contains(".launchpad"));
         assertTrue(css.contains(".launch-step.active"));
         assertTrue(css.contains(".screen-tabs"));
@@ -51,6 +58,8 @@ class StudioWebResourcesTest {
         assertTrue(css.contains(".builder-hero"));
         assertTrue(css.contains(".playlist-workspace"));
         assertTrue(css.contains(".playlist-item-card"));
+        assertTrue(css.contains(".event-step-card"));
+        assertTrue(css.contains(".event-hero"));
         assertTrue(css.contains(".card-actions"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));

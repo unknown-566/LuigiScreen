@@ -79,6 +79,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Secure browser Web Studio with one-time login links and revocable sessions
 - Beginner-first Web Studio workflow: Media Library -> Playlist Editor -> Screen Automation
 - Direct browser playlist builder with visible add, delete, duplicate and assign controls
+- Direct browser event builder with visible add step, delete, duplicate, start and stop controls
 - Preview/Program Live Studio with bounded live source thumbnails
 - Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, Live Control Room, queues and playback explanations
@@ -251,7 +252,7 @@ Bug reports should include the output of `/screen status`, relevant console logs
 
 **Version number:** `1.2.0-alpha.5`
 
-**Version title:** `LuigiScreen 1.2.0-alpha.5 - Web Studio Playlist Builder`
+**Version title:** `LuigiScreen 1.2.0-alpha.5 - Web Studio Builders`
 
 **Release channel:** Alpha
 
@@ -267,12 +268,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,470,001 bytes
+**File size:** 55,472,686 bytes
 
 **SHA-256:**
 
 ```text
-8660253AAED72FBECE35A4976AA0AEE2DAEE409C187AE5BD0D8826C8CF0B5292
+8819E0C63CF80C7949B45B26D9C4BB0853F66206CB4A59E029520D172C245E44
 ```
 
 **Dependency:**
@@ -290,6 +291,10 @@ LuigiScreen-1.2.0-alpha.5.jar
 - New Web Studio playlists start empty instead of creating a confusing starter item
 - Added visible Add item, Delete item, Duplicate, Delete playlist and Assign and play controls
 - Added Media Library Add to playlist buttons that use the selected target playlist
+- Reworked Events into a beginner-first timeline builder
+- Added direct event step add/delete actions from Web Studio
+- Added visible Delete event, Duplicate, Start event and Stop event controls
+- Kept empty events visible in the builder while preventing empty events from starting
 - Added manual Play now controls from the screen Automation tab
 - Added playlist readiness, item count and assigned-screen count to the browser snapshot
 - Kept advanced playlist item edits in the inspector/draft flow

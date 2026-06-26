@@ -327,7 +327,8 @@ final class PlaybackController {
         String screen = ScreenDefinition.normalizeId(screenId);
         String event = ScreenDefinition.normalizeId(eventId);
         EventDefinition requested = events.get(event);
-        if (plugin.screenDefinition(screen) == null || requested == null) {
+        if (plugin.screenDefinition(screen) == null
+                || requested == null || requested.sequence().isEmpty()) {
             return false;
         }
         RuntimeState state = states.computeIfAbsent(screen, ignored -> new RuntimeState());
@@ -706,10 +707,8 @@ final class PlaybackController {
                 continue;
             }
             List<PlaybackItem> sequence = readItems(id, section, "sequence");
-            if (!sequence.isEmpty()) {
-                result.put(id, new EventDefinition(
-                        id, section.getInt("priority", 50), sequence));
-            }
+            result.put(id, new EventDefinition(
+                    id, section.getInt("priority", 50), sequence));
         }
         return result;
     }

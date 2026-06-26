@@ -564,6 +564,12 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
     linear-gradient(135deg, #141b14, #101416);
   overflow: visible;
 }
+.builder-hero.event-hero {
+  border-color: #344c72;
+  background:
+    radial-gradient(circle at 0 0, rgba(121,174,247,.16), transparent 38%),
+    linear-gradient(135deg, #101723, #101416);
+}
 .card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -595,6 +601,10 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
 .playlist-card:hover {
   border-color: #5c6b63;
   background: #151a1e;
+}
+.event-card:hover {
+  border-color: #52739d;
+  background: #111821;
 }
 .playlist-card-top,
 .playlist-card-stats {
@@ -674,6 +684,11 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
   border-color: #6f8c60;
   background: #121812;
 }
+.event-step-card:hover,
+.event-step-card.selected {
+  border-color: #6088bd;
+  background: #111721;
+}
 .playlist-item-card.disabled {
   opacity: .62;
 }
@@ -732,6 +747,21 @@ tr.clickable:hover td { background: rgba(184,244,93,.035); }
   border-radius: 10px;
   background: #0d1013;
   text-align: center;
+}
+.event-mini-timeline,
+.event-timeline {
+  display: grid;
+  gap: 10px;
+}
+.event-mini-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 32px;
+  align-items: center;
+}
+.event-header-panel,
+.event-add-panel {
+  border-color: #2e3b4d;
 }
 
 @media (max-width: 1180px) {
