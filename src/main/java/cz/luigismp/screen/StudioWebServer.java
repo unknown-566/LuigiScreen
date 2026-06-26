@@ -276,7 +276,8 @@ final class StudioWebServer {
         }
         String path = exchange.getRequestURI().getPath();
         String name = path.substring("/assets/".length());
-        if (!List.of("app.css", "app.js").contains(name)) {
+        if (!List.of("app.css", "app.js", "vendor/choices.min.css",
+                "vendor/choices.min.js").contains(name)) {
             sendText(exchange, 404, "Not found");
             return;
         }

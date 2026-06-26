@@ -26,6 +26,8 @@ class StudioWebResourcesTest {
         assertTrue(html.contains("id=\"inspector\""));
         assertTrue(html.contains("id=\"mobileControl\""));
         assertTrue(html.contains("<span>Calendar</span>"));
+        assertTrue(html.contains("/assets/vendor/choices.min.css"));
+        assertTrue(html.contains("/assets/vendor/choices.min.js"));
         assertTrue(javascript.contains("new EventSource(\"/api/events\")"));
         assertTrue(javascript.contains("data-help"));
         assertTrue(javascript.contains("class=\"help-copy\""));
@@ -62,6 +64,10 @@ class StudioWebResourcesTest {
         assertTrue(javascript.contains("schedule.duplicate"));
         assertTrue(javascript.contains("schedule.run"));
         assertTrue(javascript.contains("schedule: renderAutomations"));
+        assertTrue(javascript.contains("function enhancePickers"));
+        assertTrue(javascript.contains("new Choices"));
+        assertTrue(javascript.contains("automationDrafts"));
+        assertTrue(javascript.contains("deferRenderUntil"));
         assertFalse(javascript.contains("New schedule"));
         assertTrue(css.contains(".launchpad"));
         assertTrue(css.contains(".launch-step.active"));
@@ -75,6 +81,8 @@ class StudioWebResourcesTest {
         assertTrue(css.contains(".automation-hero"));
         assertTrue(css.contains(".automation-rule-card"));
         assertTrue(css.contains(".automation-rule-flow"));
+        assertTrue(css.contains(".choices__inner"));
+        assertTrue(css.contains(".choices__list--dropdown"));
         assertTrue(css.contains(".card-actions"));
         assertTrue(javascript.contains("function attachHelp"));
         assertTrue(css.contains(".help-copy { display: none"));

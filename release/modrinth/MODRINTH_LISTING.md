@@ -81,6 +81,7 @@ No client mod is required. Players join with a normal Minecraft client.
 - Direct browser playlist builder with visible add, delete, duplicate and assign controls
 - Direct browser event builder with visible add step, delete, duplicate, start and stop controls
 - Direct browser automation builder with readable WHEN / IF / THEN rules
+- Searchable bundled picker controls for long screen, media, event and playlist lists
 - Preview/Program Live Studio with bounded live source thumbnails
 - Clean hover help and accessible descriptions without permanent info icons
 - Dashboard, Live Control Room, queues and playback explanations
@@ -269,12 +270,12 @@ Bug reports should include the output of `/screen status`, relevant console logs
 LuigiScreen-1.2.0-alpha.5.jar
 ```
 
-**File size:** 55,476,713 bytes
+**File size:** 55,503,050 bytes
 
 **SHA-256:**
 
 ```text
-E1293E81E2CE095C9E510A7E36074924D609F50F050F969F72FE3B53D8FFAD5A
+B8F3D9FAF48324D1BD835AC62C3F07D1353DF81D1DED1ADD5F3AB35E5F621CA6
 ```
 
 **Dependency:**
@@ -300,6 +301,11 @@ E1293E81E2CE095C9E510A7E36074924D609F50F050F969F72FE3B53D8FFAD5A
 - Added readable WHEN / IF / THEN automation cards
 - Added direct automation Save rule, Run now, Duplicate and Delete rule controls
 - Added direct event, playlist, start, stop and return automation actions from Web Studio
+- Added local browser-side automation drafts so live refreshes no longer reset unsaved rule edits
+- Prevented the automation time picker from being interrupted by live Web Studio refreshes while editing
+- Replaced plain Web Studio select boxes with bundled searchable Choices.js picker controls
+- Bundled Choices.js locally, including its MIT license notice, so Web Studio does not need a CDN
+- Routed the old Schedule page to the new Automation builder to avoid two competing editors
 - Added manual Play now controls from the screen Automation tab
 - Added playlist readiness, item count and assigned-screen count to the browser snapshot
 - Kept advanced playlist item edits in the inspector/draft flow

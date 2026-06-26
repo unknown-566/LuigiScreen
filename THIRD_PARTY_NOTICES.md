@@ -59,6 +59,17 @@ LuigiScreen does not claim ownership of FFmpeg. Recipients may replace or
 rebuild the separately loaded native FFmpeg libraries, subject to platform
 compatibility and the applicable licenses.
 
+## Choices.js
+
+- Purpose: Searchable select/dropdown controls in Web Studio
+- Bundled: Yes
+- License: MIT License
+- Project: https://github.com/Choices-js/Choices
+- License text: `third-party-licenses/choices-js-LICENSE.txt`
+
+LuigiScreen bundles Choices.js as static browser assets so Web Studio works
+without loading scripts or styles from an external CDN.
+
 ## Development-only dependencies
 
 Paper API, MapEngine API and JUnit are used while compiling or testing and are
